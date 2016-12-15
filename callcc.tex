@@ -1,0 +1,8 @@
+\abschnitt{Call with current continuation}
+The programming language \emph{Scheme} is well known for its control abstraction
+\callcc\footnote{abbreviation \cc}. \ccc accepts a function as argument and 
+
+When a continuation object is applied to an argument, the existing continuation is eliminated and the applied continuation is restored in its place, so that the program flow will continue at the point at which the continuation was captured and the argument of the continuation then becomes the "return value" of the call/cc invocation. 
+
+
+Functions called with \invokeop are a kind of \cc.

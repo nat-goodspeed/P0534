@@ -1,0 +1,92 @@
+\setlength{\parindent}{0pt} 
+\renewcommand\sfdefault{phv}
+
+\makeatletter
+    \renewcommand*\l@subsection{\@dottedtocline{2}{0em}{2.3em}}
+    \renewcommand*\l@subsection{\@dottedtocline{3}{0em}{3.2em}}
+    \renewcommand{\tableofcontents}{\@starttoc{toc}}
+\makeatother
+
+\MakePerPage{footnote}
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+
+\newcommand{\pdfimg}[1]{\pdfximage{pics/#1}\pdfrefximage\pdflastximage}
+\newcommand{\img}[1]{\mbox{\pdfimg{#1}}}
+\newcommand{\imgc}[1]{\begin{center}\img{#1}\end{center}}
+\newcommand{\graph}[1]{\input{graphs/#1}}
+\newcommand{\graphc}[1]{\begin{center}\graph{#1}\end{center}}
+
+\lstdefinelanguage
+   [arm]{Assembler}                     % add a "arm" dialect of Assembler
+   {morekeywords={mov,pop,push,subi,stw,mfcr,mflr,mr,lwz,mtcr,mtlr,mtctr,addi,bctr,str}}    % with these extra keywords:
+\lstset{
+        language=[arm]Assembler,
+        numbers=none,
+        numberstyle=\tiny,
+        numberblanklines=false,
+        stepnumber=1,
+        numbersep=10pt
+}
+
+\newcommand{\cpp}[1]{{\lstinline[
+		basicstyle=\ttfamily\small\color{black},
+        breakatwhitespace=true,
+        breaklines=true,
+        captionpos=b,
+        commentstyle=\ttfamily\color{gray},
+        keywordstyle=\ttfamily\color{blue},
+        language={C++},
+        morekeywords={co\_await,from,noexcept,resumable,co\_yield},
+        showspaces=false,
+        showstringspaces=false,
+        showtabs=false,
+        stringstyle=\ttfamily\color{red}
+] !#1!}\xspace}
+\newcommand{\cppf}[1]{\lstinputlisting[
+		basicstyle=\ttfamily\small\color{black},
+        breakatwhitespace=true,
+        breaklines=true,
+        captionpos=b,
+        commentstyle=\ttfamily\color{gray},
+        keywordstyle=\ttfamily\color{blue},
+        language={C++},
+        morekeywords={co\_await,from,noexcept,resumable,co\_yield},
+        showspaces=false,
+        showstringspaces=false,
+        showtabs=false,
+        stringstyle=\ttfamily\color{red}
+] {code/#1.cpp}}
+
+
+\newcommand{\asm}[1]{
+    \lstinline[
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{red},
+        stringstyle=\color{green}
+    ] {#1}
+}
+\newcommand{\asmf}[1]{
+    \lstinputlisting[
+%        numbers=left,
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{red},
+        stringstyle=\color{green}
+    ] {code/#1}
+}
+
+\newcommand{\await}{\cpp{co\_await}}
+\newcommand{\channel}{\cpp{channel<>}}
+\newcommand{\ectx}{\cpp{std::execution\_context<>}}
+\newcommand{\ectxvoid}{\cpp{std::execution\_context<void>}}
+\newcommand{\ectxargs}{\cpp{std::execution\_context<args...>}}
+\newcommand{\invokeop}{\cpp{std::execution\_context<>::operator(invoke\_on\_top, ...)}}
+\newcommand{\op}{\cpp{operator()()}}
+\newcommand{\main}{\cpp{main()}}
+
+\newcommand{\callcc}{\emph{call-with-current-continuation}}
+\newcommand{\cc}{\emph{call/cc}}
+
+\newcommand{\abschnitt}[1]{\addcontentsline{toc}{subsection}{#1}\subsection*{#1}}
+\newcommand{\uabschnitt}[1]{\addcontentsline{toc}{subsubsection}{#1}\paragraph*{#1}}
