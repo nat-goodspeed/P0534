@@ -1,0 +1,75 @@
+\abschnitt{Introduction}
+
+\cc (abrevation of 'call with current continuation') is a universal control
+operator (well-known from like Scheme, Ruby, Lisp ...) that captures the
+current continuation as a first-class object and pass it as an argument to
+a function (named \contfn in rest of the text) that is executed in a newly
+created continuation.
+
+
+\uabschnitt{Continuation}
+
+Modern mico-processors are registers machines; the content of processor
+registers represent a execution context of the program at a given point in
+time.\\
+Operating systems simulate parallel execution of programs on a single processor
+by switching between programs (context switch) by preserving and restoring the
+the content of all registers.\\
+Contiunations uses a similar technique - they represent the state of the
+execution context and can be suspended and resumed later in order to change the
+control flow of a program.\\
+This is achieved by preserving and restoring a subset of micro-processor
+registers (similar to OS context switching).\\
+\newline
+Continuations are useful to implement other control structures like
+coroutines/(lazy) generators, lightweight threads, cooperative mutlitasking
+(fibers), backtracking, non-deterministic choice ...\\
+\newline
+With first-class contiunations a language can control the order of instructions.
+They enable to jump into a function on exact the point were it that has been
+exited previously. A contiunation preserves the execution context (e.g. state of
+the register machine).
+\newline
+
+\con represents a contiunation; it contains the content of preserved
+registers and manages the associated stack (allocation/deallocation).
+\con s a one-shot continuation - it can be used only once, after applied to
+\resume it is invalidated.\\
+\newline
+
+\con is  only move-constructible and move-assignable.
+
+As a first-class object \con can be applied to and returned from a function,
+assigned to a variable or stored in a container.
+
+A contiunation is continued by appling to function `resume()`.
+
+
+\uabschnitt{callcc function}
+
+\call is the C++ equivalent to Scheme's \cc operator. It captures the
+current continuation (the rest of the computation; code after \call) and
+trickers a context switch. The context switch is achived by preserving certain
+registers (including instruction and stack pointer), defined by the calling
+convention of the ABI, of the current continuation and restoring those
+registers of the resumed continuation. The control flow of the resumed
+continuation continues.
+The current continuation is suspended and passed as argument to the resumed
+continuation.
+
+\call expects a \contfn with signature
+`'continuation(continuation && c, Arg ...arg)'`. The parameter `c`
+represents the current continuation from which this continuation was resumed
+(e.g. that has called \call) and `arg` are the data passed to \call.
+
+On return the \contfn of the current continuation has to specify an
+\con to which the execution control is transferred after termination
+of the current continuation.
+
+If an instance with valid state goes out of scope and the \contfn has
+not yet returned, the stack is traversed in order to access the control
+structure (address stored at the first stack frame) and continuation's stack is
+deallocated.
+
+
+\uabschnitt{resume function}

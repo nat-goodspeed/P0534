@@ -76,17 +76,15 @@
     ] {code/#1}
 }
 
-\newcommand{\await}{\cpp{co\_await}}
-\newcommand{\channel}{\cpp{channel<>}}
+\newcommand{\call}{\cpp{std::callcc()}}
+\newcommand{\resume}{\cpp{std::resume()}}
+\newcommand{\cont}{\cpp{std::contiunation}}
 \newcommand{\ectx}{\cpp{std::execution\_context<>}}
-\newcommand{\ectxvoid}{\cpp{std::execution\_context<void>}}
-\newcommand{\ectxargs}{\cpp{std::execution\_context<args...>}}
-\newcommand{\invokeop}{\cpp{std::execution\_context<>::operator(invoke\_on\_top, ...)}}
-\newcommand{\op}{\cpp{operator()()}}
 \newcommand{\main}{\cpp{main()}}
 
 \newcommand{\callcc}{\emph{call-with-current-continuation}}
 \newcommand{\cc}{\emph{call/cc}}
+\newcommand{\contfn}{\emph{continuation-function}}
 
 \newcommand{\abschnitt}[1]{\addcontentsline{toc}{subsection}{#1}\subsection*{#1}}
 \newcommand{\uabschnitt}[1]{\addcontentsline{toc}{subsubsection}{#1}\paragraph*{#1}}
