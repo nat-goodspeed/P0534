@@ -1,9 +1,43 @@
-\abschnitt{The context switch mechanism}
-Calling convention, part of the ABI, covers how function's arguments are passed
-and return values retrieved; which CPU registers have to be preserved by the
-called subroutine (scratch vs. called-saved registers).\\
+\abschnitt{The switch mechanism}\label{mechanism}
 
-The calling convention of SYSV ABI for x86\_64 architecture determines that CPU
-registers R12, R13, R14, R15, RBX and RBP have to be preserved during a function
-call. The arguments are passed via RDI, RSI and RAX, RDX are used for return
-values.
+Modern \bfs{micro-processors} are \bfs{registers machines}; the content of
+processor registers represent a execution context of the program at a given
+point in time.\\
+\bfs{Operating systems} simulate parallel execution of programs on a single
+processor by switching between programs (\bfs{context switch}) by
+\bfs{preserving} and \bfs{restoring} the content of \bfs{all registers}.\\
+
+For \cc no all registers have to be preserved because the calling convention,
+part of the ABI, that covers how function's arguments and return values are
+passed, determines which subset of CPU registers have to be preserved by the
+called subroutine (scratch and callee-saved registers).\\
+
+As a consequence a continuation preserves the execution context, e.g. state of
+the register machine (including the stack as well as the instruction pointer).
+
+The \bfs{calling convention}\cite{SYSVABI} of \bfs{SYSV ABI} for \bfs{x86\_64}
+architecture determines that CPU registers R12, R13, R14, R15, RBX and RBP have
+to be preserved by the sub-routine - the first arguments are passed to functions
+via RDI, RSI, RDX, RCX, R8 and R9 and values returned from functions in RAX,
+RDX.\\
+
+\asmfn{jump_x86_64.S}
+
+The code fragment, taken from boost.context\cite{bcontext}, shows how the
+context switch might be implemented for \bfs{SYSV ABI}/\bfs{x86\_64}.\\
+Line (1) prepares the stack of the current context to hold the content of
+registers R12-R15, RBX ad RBP. The address of the stack pointer is preserved in
+register RAX at line (10) for further use.\\
+The \bfs{return address}, e.g. the address of the instruction that has to be
+executed after this function returns, is left on the stack. Other architectures
+store the return address in a special register (link register) instead on the
+stack. In this case the link register must be preserved too.\\
+At line (12) the stack pointer gets assigned to the address of the
+continuation that as to be resumed - in fact, the continuation represents a
+stack address (the stack pointer was passed in RDI as first argument).\\
+The return address is loaded into register R8 at line (14); with the indirect
+jump at line (28) the \bfs{continuation} is \bfs{resumed}.\\
+As required by the calling convention, registers R12-R15, RBX and RBP are
+restored at lines (16) - (21).\\
+The stack address, preserved in RAX at line (10), of the
+\bfs{suspended continuation} is \bfs{returned} as a \bfs{one-shot continuation}.
