@@ -56,32 +56,27 @@
 %//////////////////////////////////////////////////////////////////////////////
 
 \paragraph*{Abstract}
-This document {\bfseries supersedes P0099R1}.
-\newline
-This paper proposes a C++ equivalent to the well-known concept of \callcc.\\
-In fact, the proposed \etc from P0099R1\cite{P0099R1} already represents a
-one-shot continuation, reminding on Scheme's\cite{schemecallcc} and
-Ruby's\cite{rubycallcc} \emph{call/cc}. Many other programing languages contain
-as similar feature\footnote{for instance see PICO\cite{picocallcc}}.\\
-\newline
-From this point of view the proposed \cc is an advancement of \ectx.\\
-\newline
-Benefits are:
+This document \bfs{supersedes P0099R1\cite{P0099R1}} and proposes a C++
+equivalent to the well-known concept \callcc.\\
+In fact, P0099R1's \ectx already represents a \bfs{one-shot continuation},
+reminding on Scheme's\cite{schemecallcc} and Ruby's\cite{rubycallcc} \cc.
+From this point of view the proposed \call/\cont are an \bfs{advancement} of
+\ectx. The benefits are:
 \begin{itemize}
-    \item   established/well-known concept
-    \item   prevent name clashes with \emph{execution-context} in
+    \item   use of established, well-known concept
+    \item   no name clashes with \emph{execution-context} in
             executor and network proposals
     \item   relaxed constrains regarding to transfer of data
     \item   eliminating falls usage
 \end{itemize}
 
-\input{introduction}
-\input{mechanism}
+\input{continuations}
 \input{callcc}
-\input{usecases}
-\input{notes}
-\input{appendix_a}
-\input{appendix_b}
+%\input{mechanism}
+%\input{usecases}
+%\input{notes}
+%\input{appendix_a}
+%\input{appendix_b}
 
 %//////////////////////////////////////////////////////////////////////////////
 
