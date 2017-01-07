@@ -15,10 +15,12 @@
 \newcommand{\imgc}[1]{\begin{center}\img{#1}\end{center}}
 \newcommand{\graph}[1]{\input{graphs/#1}}
 \newcommand{\graphc}[1]{\begin{center}\graph{#1}\end{center}}
+\newcommand{\bfs}[1]{{\bfseries #1}}
+\newcommand{\bfe}[1]{\bfs{\emph{#1}}}
 
 \lstdefinelanguage
    [arm]{Assembler}                     % add a "arm" dialect of Assembler
-   {morekeywords={mov,pop,push,subi,stw,mfcr,mflr,mr,lwz,mtcr,mtlr,mtctr,addi,bctr,str}}    % with these extra keywords:
+   {morekeywords={}}    % with these extra keywords:
 \lstset{
         language=[arm]Assembler,
         numbers=none,
@@ -68,7 +70,15 @@
 }
 \newcommand{\asmf}[1]{
     \lstinputlisting[
-%        numbers=left,
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{red},
+        stringstyle=\color{green}
+    ] {code/#1}
+}
+\newcommand{\asmfn}[1]{
+    \lstinputlisting[
+        numbers=left,
         basicstyle=\ttfamily\color{black},
         keywordstyle=\color{blue},
         commentstyle=\color{red},
@@ -76,14 +86,16 @@
     ] {code/#1}
 }
 
-\newcommand{\call}{\cpp{std::callcc()}}
-\newcommand{\resume}{\cpp{std::resume()}}
-\newcommand{\cont}{\cpp{std::contiunation}}
-\newcommand{\ectx}{\cpp{std::execution\_context<>}}
-\newcommand{\main}{\cpp{main()}}
+\newcommand{\call}{\cpp{std::callcc()}\xspace}
+\newcommand{\resume}{\cpp{std::resume()}\xspace}
+\newcommand{\cont}{\cpp{std::continuation}\xspace}
+\newcommand{\ectx}{\cpp{std::execution\_context<>}\xspace}
+\newcommand{\main}{\cpp{main()}\xspace}
+\newcommand{\shift}{\cpp{shift}\xspace}
+\newcommand{\reset}{\cpp{reset}\xspace}
 
-\newcommand{\callcc}{\emph{call-with-current-continuation}}
-\newcommand{\cc}{\emph{call/cc}}
+\newcommand{\callcc}{\bfs{call-with-current-continuation}\xspace}
+\newcommand{\cc}{\bfs{call/cc}\xspace}
 \newcommand{\contfn}{\emph{continuation-function}}
 
 \newcommand{\abschnitt}[1]{\addcontentsline{toc}{subsection}{#1}\subsection*{#1}}
