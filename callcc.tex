@@ -1,8 +1,58 @@
 \abschnitt{Call with current continuation}
-The programming language \emph{Scheme} is well known for its control abstraction
-\callcc\footnote{abbreviation \cc}. \ccc accepts a function as argument and 
 
-When a continuation object is applied to an argument, the existing continuation is eliminated and the applied continuation is restored in its place, so that the program flow will continue at the point at which the continuation was captured and the argument of the continuation then becomes the "return value" of the call/cc invocation. 
+\cc (abbreviation of 'call with current continuation') is a universal control
+operator (well-known from languages like Scheme, Ruby, Lisp ...) that captures
+the \currcont (instructions that happen next after \cc returns) as a first-class
+object and pass it as an argument to a function that is executed in the newly
+created execution context.\\
+\call is the C++ equivalent to Scheme's \cc operator.
 
+When a continuation object is applied to \resume, the existing continuation is
+eliminated and the applied continuation is restored in its place, so that the
+program flow will continue at the point at which the continuation was captured
+and the argument of the continuation then becomes the \emph{return value} of
+the \call invocation.
 
-Functions called with \invokeop are a kind of \cc.
+\cont is a one-shot continuation - it can be used only once, is only
+move-constructible and move-assignable.
+
+\cppf{loop}
+
+The \cpp{std::callcc( foo)} call at (a) captures the \currcont, enters function
+\cpp{foo()} while passing the captured continuation as argument \cpp{c1}.\\
+As long as continuation \cpp{c1} is valid, \cpp{"foo"} is passed to standard
+output.\\
+The expression \cpp{std::resume(std::move(c1))} at (b) resumes the original
+contiunation (represented within \cpp{foo()} by \cpp{c1}) and transfers back the
+control of execution to \cpp{main()}. On return from \cpp{std::callcc(foo)},
+the assignment at (c) sets \cpp{c2} to the \currcont by (b).
+
+The assignment at (e) illustrates a recommended idiom: since the call to \call
+at (b) has invalidated \cpp{c1}, it should be replaced by the newly-synthesized
+\cont instance returned by \resume.
+
+The call to \cpp{resume(std::move(c2))} at (d) (the \emph{updated} \cpp{c2})
+resumes function \cpp{foo}, returning from the \cpp{resume()} call at (b) and
+executing the assignment at (e). Here, too, we replace the \cont instance
+\cpp{c1} invalidated by the \resume call at (b) with the new instance
+returned by that same \resume call.
+
+Function \call captures \currcont and enters the given function immediatelly,
+while \resume returns the control back to the contiunation passed as argument.\\
+
+The presented code prints out \cpp{"foo" "bar"} in a endless loop.\\
+
+In order to transfer data, \call as well as \resume accept arguments, that are
+stored on the stack of the \currcont. Function \davail tests if data have been
+passed and with \dtransfer the data can be accessed.
+
+\cppf{fibonacci}
+
+The invoction of \call at (a) immediately enters the lambda, passing no data
+but the \currcont. The lambda calculates the fibonacci number on behalf of local
+variables \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is
+transferred via \resume at (b). The execution control returns and \cpp{c2}
+represents the continuation of the lambda. With \dtransfer at (c) the fibonacci
+number is transferred to the current context while at (d) the lambda is entered
+again in order to compute the next fibonacci number (without passing parameter
+to the lambda).
