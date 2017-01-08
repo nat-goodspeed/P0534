@@ -16,7 +16,6 @@
 \newcommand{\graph}[1]{\input{graphs/#1}}
 \newcommand{\graphc}[1]{\begin{center}\graph{#1}\end{center}}
 \newcommand{\bfs}[1]{{\bfseries #1}}
-\newcommand{\bfe}[1]{\bfs{\emph{#1}}}
 
 \lstdefinelanguage
    [arm]{Assembler}                     % add a "arm" dialect of Assembler
@@ -99,8 +98,13 @@
 
 \newcommand{\callcc}{\bfs{call-with-current-continuation}\xspace}
 \newcommand{\cc}{\bfs{call/cc}\xspace}
+<<<<<<< HEAD
 \newcommand{\entryfn}{\emph{entry-function}\xspace}
 \newcommand{\currcont}{\bfs{current continuation}}
+=======
+\newcommand{\contfn}{\emph{continuation-function}\xspace}
+\newcommand{\currcont}{\bfs{current continuation}\xspace}
+>>>>>>> 55fa1a0... change commands
 
 \newcommand{\abschnitt}[1]{\addcontentsline{toc}{subsection}{#1}\subsection*{#1}}
 \newcommand{\uabschnitt}[1]{\paragraph*{#1}}
