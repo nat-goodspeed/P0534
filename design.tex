@@ -1,0 +1,646 @@
+\abschnitt{Design}
+
+\call expects a \entryfn (callable that is executed in the new continuation)
+with signature \cpp{continuation(continuation &&,Arg ...)}.\\
+
+On return the \entryfn has to specify an \cont to which the execution control is
+transferred.\\
+
+If an instance with valid state goes out of scope and the \entryfn has not yet
+returned, the stack is traversed  and continuation's stack is deallocated.\\
+
+
+\uabschnitt{Passing data}\label{subsec:data}
+
+\uabschnitt{Toplevel functions: main() and thread functions}\label{subsec:main}
+
+\main as well as the \entryfn of a thread can be represented by an continuation.
+That \cont instance is synthesized when the running context suspends, and is
+passed into the newly-resumed continuation.
+\cppf{simple}
+The \cpp{ctx1()} call at (a) enters the lambda in context ctx1.\\
+The \cont\ \cpp{ctx2} at (b) represents the execution context of \main.\\
+Returning \cpp{ctx2} at (c) resumes the original context (switch back to
+\main).
+
+\uabschnitt{\callcc and std::thread}
+Any contiunation represented by a valid \cont instance is necessarily suspended.\\
+It is valid to resume a \cont instance on any thread -- \emph{except} that you
+must not attempt to resume a \cont instance representing \main, or
+the \emph{entry-function} of some other \cpp{std::thread}, on any thread other
+than its own.
+\cont provides a method to test for this.
+If \cpp{std::contiunation<>::any\_thread()} returns \cpp{false}, it is
+only valid to resume that
+\cont instance on the thread on which it was initially launched.
+
+
+\uabschnitt{Termination}
+When that toplevel callable returns a \cont instance, the continuation is
+terminated. Control switches to the continuation indicated by the returned \cont
+instance.\\
+Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
+undefined behavior.\\
+If the toplevel callable returns the same \cont instance it was originally
+passed (or rather, the most recently updated instance returned from the
+previous instance's \call or \resume), control returns to the context that most
+recently resumed the running callable. However, the callable may return (switch
+to) any reachable valid \cont instance with the correct type signature.
+
+
+\uabschnitt{Exceptions}\label{subsec:exceptions}
+If an uncaught exception escapes from the \entryfn, \cpp{std::terminate} is called.
+
+
+\uabschnitt{Invoke function on top of a continuation}
+Sometimes it is useful to invoke a new function (for instance, to trigger
+unwinding the stack) on top of a continuation. For this purpose you may
+pass to \cpp{resume(continuation &&,invoke\_ontop\_arg\_t,Fn &&,Args ...)}:
+
+\begin{itemize}
+  \item the special argument \cpp{invoke\_ontop\_arg}
+  \item the function to execute
+  \item any additional arguments.
+\end{itemize}
+
+The function passed in this case must accept as parameters the \cont.
+It must return the same set of arguments as the \resume specialization.
+\footnote{But in the case of passing no arguments, the return type is simply
+\cpp{void}.}\\
+
+For purposes of discussion, consider two \cont instances: \cpp{mc} and \cpp{fc}.
+Suppose that code running on the program's main context instantiates \cpp{fc}
+with function \cpp{f()} and calls \cpp{calcc( fc)}, thereby entering \cpp{f()}.
+This is the point at which \cpp{mc} is synthesized and passed into \cpp{f()}.
+
+Suppose further that after doing some work, \cpp{f()} calls \cpp{resume(mc)},
+thereby switching context back to the main context. \cpp{f()} remains
+suspended in the call to \cpp{resume(mc)}.
+
+At this point the main context calls \cpp{iresume(fc,invoke\_ontop\_arg, g);}
+where \cpp{g()} is declared as \cpp{void g(continuation &);} \cpp{g()} is
+entered in the context of \cpp{f()}. It is as if \cpp{f()}'s call to
+\cpp{resume(mc)} directly called \cpp{g()}.
+
+Function \cpp{g()} has the same range of possibilities as any function called
+on \cpp{f()}'s context. Its special invocation only matters when control
+leaves it in either of two ways:
+
+\begin{enumerate}
+  \item If \cpp{g()} throws an exception, that exception unwinds all previous
+        stack entries in that context (such as \cpp{f()}'s) as well, back to a
+        matching \cpp{catch} clause.\footnote{As stated in
+        \nameref{subsec:exceptions}, if there is no matching \cpp{catch} clause
+        in that context, \cpp{std::terminate()} is called.}
+  \item If \cpp{g()} returns, its return value becomes the value returned by
+        \cpp{f()}'s suspended \cpp{resume(mc)} call. This is why \cpp{g()}'s
+        return type must be the same as that of \resume, rather than that of an
+        ordinary toplevel context function.
+\end{enumerate}
+
+Consider the following example:
+
+\cppf{ontop}
+
+Control passes from (a) to (b) to (c), and so on.
+
+The \cpp{resume(c,invoke\_ontop\_arg, f2, data+1)} call at (l) passes control
+to \cpp{f2()} on the context originally created for \cpp{f1()}.
+
+The \cpp{return} statement at (n) causes the \op call at (i) to return,
+executing the assignment at (o). The \cpp{int} returned by \cpp{f2()}
+is directly returned to that assignment at (o).
+
+So in this example, the call at (l) synthesizes a \cont instance representing
+the main context and updates \cpp{mctx} internally. \cpp{f2()} returns its
+return value \emph{-1}. Finally, \cpp{f1()} returns its own \cpp{ctx}
+variable, switching back to the main context.
+
+
+\uabschnitt{Stack destruction}\label{subsec:destruction}
+On construction of \cpp{execution\_context} a stack is allocated. If the
+toplevel context-function returns, the stack will be destroyed. If the
+context-function has not yet returned and the \nameref{subpara:destructor} of
+a valid \cpp{execution\_context} instance (\opbool
+returns \cpp{true}) is called, the stack will be unwound and
+destroyed.\footnote{An implementation is free to unwind the stack without
+throwing an exception. However, if an exception is thrown, it should be
+named \cpp{std::execution\_context\_unwind}. Portable consumer
+code \emph{must} permit \cpp{std::execution\_context\_unwind} exceptions to
+propagate, even if all other exceptions are caught with \cpp{catch(...)}.}
+
+The stack on which \cpp{main()} is executed, as well as the stack implicitly
+created by \cpp{std::thread}'s constructor, is allocated by the operating
+system. Such stacks are recognized by \cont, and are not deallocated by its
+destructor.
+
+\uabschnitt{Stack allocators}\label{subsec:stackalloc}
+are used to create stacks.\footnote{This concept, along with the \cont
+constructor accepting \cpp{std::allocator\_arg\_t}, is an optional part of the
+proposal. It might be that implementations can reliably infer the optimal
+stack representation.} Stack allocators might implement arbitrary stack
+strategies. For instance, a stack allocator might append a guard page at the
+end of the stack, or cache stacks for reuse, or create stacks that grow on
+demand.\\
+Because stack allocators are provided by the implementation, and are only used
+as parameters of\\
+\cont's constructor, the StackAllocator concept is an implementation detail,
+used only by the internal mechanisms of the \cont implementation. Different
+implementations might use different StackAllocator concepts.\\
+However, when an implementation provides a stack allocator matching one of
+the descriptions below, it should use the specified name.\\
+Possible types of stack allocators:
+\begin{itemize}
+    \item \cpp{protected\_fixedsize}: The constructor accepts a \cpp{size\_t}
+        parameter. This stack allocator constructs a contiguous stack of
+        specified size, appending a guard page at the end to protect against
+        overflow. If the guard page is accessed (read or write operation), a
+        segmentation fault/access violation is generated by the operating
+        system.
+    \item \cpp{fixedsize}: The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator constructs a contiguous stack of specified size.
+        In contrast to \cpp{protected\_fixedsize}, it does not append a guard
+        page. The memory is simply managed by \cpp{std::malloc()}
+        and \cpp{std::free()}, avoiding kernel involvement.
+    \item \cpp{segmented}: The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator creates a segmented stack with the specified
+        initial size, which grows on demand.
+\end{itemize}
+
+
+\uabschnitt{std::continuation}
+declaration of class \cont
+\cppf{cont}
+\paragraph*{member functions}
+\subparagraph*{(constructor)}
+constructs new continuation\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{continuation() noexcept} & (1)\\
+
+    \midrule
+
+    \cpp{continuation(continuation&& other)} & (2)\\
+
+    \midrule
+
+    \cpp{continuation(const continuation& other)=delete} & (3)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] This constructor instantiates an invalid \cont. Its \opbool
+              returns \cpp{false}; its \cpp{operator\!()} returns \cpp{true}.
+    \item[2)] moves underlying state to new \cont
+    \item[3)] copy constructor deleted
+\end{description}
+
+{\bfseries Notes}
+\newline
+When a \cont is constructed using either of the constructors accepting
+\cpp{fn}, control is \emph{not} immediately passed to \cpp{fn}. Resuming
+(entering) \cpp{fn} is performed by calling \cpp{operator()()} on the new
+\cont instance.\\
+
+\subparagraph*{(destructor)}\label{subpara:destructor}
+destroys an continuation\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{\~continuation()} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] destroys a \cont instance. If this instance represents a
+              context of execution (\opbool returns \cpp{true}),
+              then the context of execution is destroyed too. Specifically,
+              the stack is unwound. As noted in \nameref{subsec:destruction},
+              an implementation is free to unwind the stack either by
+              throwing \cpp{std::execution\_context\_unwind} or by intrinsics
+              not requiring \cpp{throw}.\\
+\end{description}
+
+\subparagraph*{operator=}
+moves the continuation object\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{continuation& operator=(continuation&& other)} & (1)\\
+
+    \midrule
+
+    \cpp{continuation& operator=(const continuation& other)=delete} & (2)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] assigns the state of \cpp{other} to \cpp{*this} using move semantics
+    \item[2)] copy assignment operator deleted
+\end{description}
+
+{\bfseries Parameters}
+\begin{description}
+    \item[other]   another execution context to assign to this object\\
+\end{description}
+
+{\bfseries Return value}
+\begin{description}
+    \item[*this]
+\end{description}
+
+\subparagraph*{operator bool}
+test whether contiunation is valid\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{explicit operator bool() const noexcept} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] returns \cpp{true} if \cpp{*this} represents a context of
+              execution, \cpp{false} otherwise.
+\end{description}
+
+{\bfseries Notes}
+\newline
+A \cont instance might not represent a context of execution for any of a
+number of reasons.
+\begin{itemize}
+    \item It might have been default-constructed.
+    \item It might have been assigned to another instance, or passed into a
+          function.\\
+          \cont instances are move-only.
+    \item It might already have been resumed (\resume called). Calling \resume
+          invalidates the instance.
+    \item The toplevel context-function might have voluntarily terminated the
+          context by returning.
+\end{itemize}
+The essential points:
+\begin{itemize}
+    \item Regardless of the number of \cont declarations, exactly one\\
+          \cont instance represents each suspended context.
+    \item No \cont instance represents the currently-running context.
+\end{itemize}
+
+\subparagraph*{operator!}
+test whether contiunation is invalid\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{bool operator\!() const noexcept} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] returns \cpp{false} if \cpp{*this} represents a context of
+              execution, \cpp{true} otherwise.
+\end{description}
+
+{\bfseries Notes}
+\newline
+See {\bfseries Notes} for \opbool.
+
+\subparagraph*{any\_thread}
+test whether suspended contiunation may be resumed on a different thread\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{bool any\_thread() const noexcept} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] returns \cpp{false} if \cpp{*this} must be resumed on the same
+              thread on which it previously ran, \cpp{true} otherwise
+\end{description}
+
+{\bfseries Notes}
+\newline
+As stated in \nameref{subsec:main}, a \cont instance can represent the initial
+context on which the operating system runs \main, or the context created by
+the operating system for a new \cpp{std::thread}.
+
+It is not permitted to attempt to resume such a \cont instance on any thread
+other than its original thread. \cpp{any\_thread()} allows consumer code to
+distinguish this case.
+
+\subparagraph*{(comparisons)}
+establish an arbitrary total ordering for \cont instances\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{bool operator==(const continuation& other) const noexcept} & (1)\\
+
+    \midrule
+
+    \cpp{bool operator\!=(const continuation& other) const noexcept} & (1)\\
+
+    \midrule
+
+    \cpp{bool operator<(const continuation& other) const noexcept} & (2)\\
+
+    \midrule
+
+    \cpp{bool operator>(const continuation& other) const noexcept} & (2)\\
+
+    \midrule
+
+    \cpp{bool operator<=(const continuation& other) const noexcept} & (2)\\
+
+    \midrule
+
+    \cpp{bool operator>=(const continuation& other) const noexcept} & (2)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] Every invalid \cont instance compares equal to every other
+              invalid instance. But because the running context is never
+              represented by a valid \cont instance, and because every
+              suspended context is represented by exactly one valid
+              instance, \emph{no valid instance can ever compare equal to any
+              other valid instance.}
+    \item[2)] These comparisons establish an arbitrary total ordering of \cont
+              instances, for example to store in ordered containers. (However,
+              key lookup is meaningless, since you cannot construct a search
+              key that would compare equal to any entry.) There is no
+              significance to the relative order of two instances.
+\end{description}
+
+\subparagraph*{swap}
+swaps two \cont instances\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{void swap(continuation& other) noexcept} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] Exchanges the state of \cpp{*this} with \cpp{other}.\\
+\end{description}
+
+
+\uabschnitt{std::callcc()}
+declaration of free function \call
+\cppf{callcc}
+
+\subparagraph*{std::callcc()}
+create and enter new continuation\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{template< typename Fn, typename ...Arg >}\\
+    \cpp{continuation callcc( Fn &&, Arg ...)} & (1)\\
+
+    \midrule
+
+    \cpp{template< typename StackAlloc, typename Fn, typename ...Arg >}\\
+    \cpp{continuation callcc( std::allocator_arg_t, StackAlloc, Fn &&, Arg ...)} & (2)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] suspends the active context, resumes the execution context
+    \item[2)] specialization of (1) for \cpp{execution\_context<void>}
+    \item[3)] suspends the active context, resumes the execution context but
+        executes \cpp{fn(args ...)} in the resumed context (on top of the
+        last stack frame)
+    \item[4)] specialization of (3) for \cpp{execution\_context<void>}
+\end{description}
+
+{\bfseries Parameters}
+\begin{description}
+    \item[...args] If the toplevel context-function represented
+                   by \cpp{*this} has not yet been entered, the arguments
+                   you pass are passed to the context-function as its
+                   parameters, following the \cont first parameter. \\
+                   If the context represented by \cpp{*this} suspended by
+                   calling \op, the arguments you pass
+                   are constructed into a \contargstup and returned by
+                   that suspended \op call. \\
+                   See section \nameref{subsec:ectxdata}.\\
+    \item[fn]      The \cpp{fn} passed to (3) must accept \cpp{Args...}. It
+                   must return \cpp{std::tuple<Args...>} or simply \cpp{Arg} in
+                   the case of a single argument.\\
+                   The \cpp{fn} passed to (4) must accept and return \cpp{void}.\\
+\end{description}
+
+{\bfseries Return value}
+\begin{description}
+    \item[void]     When called on a \contvoid instance, \op returns
+                    a different \contvoid instance. This new instance
+                    represents the context that suspended in order to resume
+                    the current context. That may or may not be the same
+                    context that was previously represented by \cpp{*this},
+                    depending on other context switches executed in the
+                    meantime.
+    \item[tuple]    When called on a \contargs instance, \op returns a\\
+                    \contargstup containing a different\\
+                    \contargs instance. This new instance represents the
+                    context that suspended in order to resume the current
+                    context, as above.\\
+                    If the context represented by the new \contargs instance
+                    suspended by calling \op, the arguments passed to \op are
+                    used to populate the rest of the members of the
+                    returned \cpp{std::tuple}.\\
+                    See section \nameref{subsec:ectxdata}.\\
+                    If the context represented by the new \contargs instance
+                    voluntarily terminated by returning from its toplevel
+                    context-function, the rest of the members of the
+                    returned \cpp{std::tuple} are indeterminate.\\
+\end{description}
+
+{\bfseries Exceptions}
+\begin{description}
+    \item[1)] calls \cpp{std::terminate} if an exception escapes toplevel \cpp{fn}\\
+\end{description}
+
+{\bfseries Preconditions}
+\begin{description}
+    \item[1)] \cpp{*this} represents a context of execution (\opbool
+              returns \cpp{true})
+    \item[2)] \cpp{any\_thread()} returns \cpp{true}, or the running thread is
+              the same thread on which \cpp{*this} ran previously.
+\end{description}
+
+{\bfseries Postcondition}
+\begin{description}
+    \item[1)] \cpp{*this} is invalidated (\opbool returns \cpp{false})
+\end{description}
+
+{\bfseries Notes}
+\newline
+The \emph{prologue} preserves the execution context of the calling context as
+well as stack parts like \emph{parameter list} and \emph{return
+address}.\footnote{required only by some x86 ABIs}
+Those data are restored by the \emph{epilogue} if the calling context is
+resumed.
+\newline
+A suspended \cpp{execution\_context} can be destroyed. Its resources will be
+cleaned up at that time.
+\newline
+The returned \cpp{execution\_context} indicates whether the suspended context
+has terminated (returned from toplevel context-function) via \opbool. If the
+returned \cpp{execution\_context} has terminated, no data are transferred in
+the returned tuple.
+\newline
+Because \op invalidates the instance on which it is called, \emph{no
+valid \cont instance ever represents the currently-running context.}
+\newline
+When calling \op, it is conventional to replace the newly-invalidated 
+instance -- the instance on which \op was called -- with the new instance
+returned by that \op call. This helps to avoid inadvertent calls to \op on the
+old, invalidated instance.
+\newline
+For any \cont specialization other than \contvoid,\\
+when \op returns, it is important to test the returned \contargs instance using
+\opbool or \cpp{operator\!()} before referencing any of the \cpp{args...} in the
+returned \contargstup. If that context voluntarily terminated by returning
+from the toplevel context-function, only the \contargs member of
+the \cpp{std::tuple} will be populated. The rest of the members will have
+indeterminate values.
+
+
+\subparagraph*{std::resume()}
+resume a continuation\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{template< typename ...Arg >}\\
+    \cpp{continuation resume( continuation &&, Arg ...)} & (1)\\
+
+    \midrule
+
+    \cpp{template< typename Fn, typename ...Arg >}\\
+    \cpp{continuation resume( continuation &&, invoke\_ontop\_arg_t, Fn &&, Arg ...)} & (2)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] suspends the active context, resumes the execution context
+    \item[2)] specialization of (1) for \cpp{execution\_context<void>}
+    \item[3)] suspends the active context, resumes the execution context but
+        executes \cpp{fn(args ...)} in the resumed context (on top of the
+        last stack frame)
+    \item[4)] specialization of (3) for \cpp{execution\_context<void>}
+\end{description}
+
+{\bfseries Parameters}
+\begin{description}
+    \item[...args] If the toplevel context-function represented
+                   by \cpp{*this} has not yet been entered, the arguments
+                   you pass are passed to the context-function as its
+                   parameters, following the \cont first parameter. \\
+                   If the context represented by \cpp{*this} suspended by
+                   calling \op, the arguments you pass
+                   are constructed into a \contargstup and returned by
+                   that suspended \op call. \\
+                   See section \nameref{subsec:ectxdata}.\\
+    \item[fn]      The \cpp{fn} passed to (3) must accept \cpp{Args...}. It
+                   must return \cpp{std::tuple<Args...>} or simply \cpp{Arg} in
+                   the case of a single argument.\\
+                   The \cpp{fn} passed to (4) must accept and return \cpp{void}.\\
+\end{description}
+
+{\bfseries Return value}
+\begin{description}
+    \item[void]     When called on a \contvoid instance, \op returns
+                    a different \contvoid instance. This new instance
+                    represents the context that suspended in order to resume
+                    the current context. That may or may not be the same
+                    context that was previously represented by \cpp{*this},
+                    depending on other context switches executed in the
+                    meantime.
+    \item[tuple]    When called on a \contargs instance, \op returns a\\
+                    \contargstup containing a different\\
+                    \contargs instance. This new instance represents the
+                    context that suspended in order to resume the current
+                    context, as above.\\
+                    If the context represented by the new \contargs instance
+                    suspended by calling \op, the arguments passed to \op are
+                    used to populate the rest of the members of the
+                    returned \cpp{std::tuple}.\\
+                    See section \nameref{subsec:ectxdata}.\\
+                    If the context represented by the new \contargs instance
+                    voluntarily terminated by returning from its toplevel
+                    context-function, the rest of the members of the
+                    returned \cpp{std::tuple} are indeterminate.\\
+\end{description}
+
+{\bfseries Exceptions}
+\begin{description}
+    \item[1)] calls \cpp{std::terminate} if an exception escapes toplevel \cpp{fn}\\
+\end{description}
+
+{\bfseries Preconditions}
+\begin{description}
+    \item[1)] \cpp{*this} represents a context of execution (\opbool
+              returns \cpp{true})
+    \item[2)] \cpp{any\_thread()} returns \cpp{true}, or the running thread is
+              the same thread on which \cpp{*this} ran previously.
+\end{description}
+
+{\bfseries Postcondition}
+\begin{description}
+    \item[1)] \cpp{*this} is invalidated (\opbool returns \cpp{false})
+\end{description}
+
+{\bfseries Notes}
+\newline
+The \emph{prologue} preserves the execution context of the calling context as
+well as stack parts like \emph{parameter list} and \emph{return
+address}.\footnote{required only by some x86 ABIs}
+Those data are restored by the \emph{epilogue} if the calling context is
+resumed.
+\newline
+A suspended \cpp{execution\_context} can be destroyed. Its resources will be
+cleaned up at that time.
+\newline
+The returned \cpp{execution\_context} indicates whether the suspended context
+has terminated (returned from toplevel context-function) via \opbool. If the
+returned \cpp{execution\_context} has terminated, no data are transferred in
+the returned tuple.
+\newline
+Because \op invalidates the instance on which it is called, \emph{no
+valid \cont instance ever represents the currently-running context.}
+\newline
+When calling \op, it is conventional to replace the newly-invalidated 
+instance -- the instance on which \op was called -- with the new instance
+returned by that \op call. This helps to avoid inadvertent calls to \op on the
+old, invalidated instance.
+\newline
+For any \cont specialization other than \contvoid,\\
+when \op returns, it is important to test the returned \contargs instance using
+\opbool or \cpp{operator\!()} before referencing any of the \cpp{args...} in the
+returned \contargstup. If that context voluntarily terminated by returning
+from the toplevel context-function, only the \contargs member of
+the \cpp{std::tuple} will be populated. The rest of the members will have
+indeterminate values.
+
+
+\subparagraph*{std::transfer\_data<>()}
+transfer of data\\
