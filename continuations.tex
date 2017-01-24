@@ -30,12 +30,12 @@ program's execution, is called \bfs{current continuation} (\cc captures the
 
 Continuations that can be called multiple times are named
 \bfs{full continuations}.\\
-\bfs{Single-use continuations} can only resumed once (a resumed 
+\bfs{One-shot continuations} can only resumed once (a resumed 
 \bfs{one-shot continuation} becomes invalidated); the control is transferred to
 a execution context where to continuation is no longer in scope.\\
 
-In contrast to Scheme's \cc that captures the \bfs{entire remaining}
-continuation, the operators \shift and \reset create a so called \bfs{delimited
-continuation}. A delimited continuation represents a slice of the program
-context. Operator \reset delimits the continuation, e.g. it determines where the
-continuation starts and ends, while \shift \bfs{reifies} the contiunation.
+In contrast to s \cc that captures the \bfs{entire remaining} continuation, the
+operators \shift and \reset create a so called \bfs{delimited continuation}. A
+delimited continuation represents a slice of the program context. Operator
+\reset delimits the continuation, e.g. it determines where the continuation
+starts and ends, while \shift \bfs{reifies} the continuation.
