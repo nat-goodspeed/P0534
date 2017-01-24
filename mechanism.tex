@@ -16,10 +16,10 @@ As a consequence a continuation preserves the execution context, e.g. state of
 the register machine (including the stack as well as the instruction pointer).
 
 The \bfs{calling convention}\cite{SYSVABI} of \bfs{SYSV ABI} for \bfs{x86\_64}
-architecture determines that CPU registers R12, R13, R14, R15, RBX and RBP have
-to be preserved by the sub-routine - the first arguments are passed to functions
-via RDI, RSI, RDX, RCX, R8 and R9 and values returned from functions in RAX,
-RDX.\\
+architecture determines that gerneal purpose registers R12, R13, R14, R15, RBX
+and RBP have to be preserved by the sub-routine - the first arguments are passed
+to functions via RDI, RSI, RDX, RCX, R8 and R9 and values returned from
+functions in RAX, RDX.\\
 
 \asmfn{jump_x86_64.S}
 
@@ -40,4 +40,8 @@ jump at line (28) the \bfs{continuation} is \bfs{resumed}.\\
 As required by the calling convention, registers R12-R15, RBX and RBP are
 restored at lines (16) - (21).\\
 The stack address, preserved in RAX at line (10), of the
-\bfs{suspended continuation} is \bfs{returned} as a \bfs{one-shot continuation}.
+\bfs{suspended continuation} is \bfs{returned} as a \bfs{one-shot continuation}.\\
+
+In fact, \cc is simply the \bfs{exchange} of the \bfs{stack pointer} and certain
+\bfs{general purpose registers} - for the surrounding code \cc looks like a
+ordinary function.
