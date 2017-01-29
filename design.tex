@@ -1,6 +1,6 @@
 \abschnitt{Design}
 
-Because \cont represents a contiunation it is proposed as a simple data
+Because \cont represents a continuation it is proposed as a simple data
 structure (no behaviour exposed via member functions).\\
 \call expects a callable with signature
 \cpp{continuation(continuation &&,Arg ...)} as the first argument.\\
@@ -126,8 +126,6 @@ in either of two ways:
         ordinary toplevel context function.
 \end{enumerate}
 
-Consider the following example:
-
 \cppf{ontop}
 
 Control passes from (a) to (b) to (c), and so on.\\
@@ -233,7 +231,7 @@ destroys an continuation\\
               execution is destroyed too. Specifically, the stack is unwound. As
               noted in \nameref{subpara:destruction}, an implementation is free to
               unwind the stack either by throwing an unnamed exception or by
-              intrinsics not requiring \cpp{throw}.\\
+              intrinsics not requiring \cpp{throw}.
 \end{description}
 
 \subparagraph*{operator=}
@@ -293,7 +291,7 @@ number of reasons.
           \cont instances are move-only.
     \item It might already have been resumed (\resume called). Calling \resume
           invalidates the instance.
-    \item The toplevel context-function might have voluntarily terminated the
+    \item The top-level context-function might have voluntarily terminated the
           context by returning.
 \end{itemize}
 The essential points:
@@ -433,7 +431,7 @@ into a continuation and passed as argument to the new context\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes toplevel
+    \item[1)] calls \cpp{std::terminate} if an exception escapes top-level
               \cpp{fn}\\
 \end{description}
 
@@ -489,7 +487,7 @@ resumes a continuation\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes toplevel
+    \item[1)] calls \cpp{std::terminate} if an exception escapes top-level
               \cpp{fn}\\
 \end{description}
 
@@ -517,7 +515,7 @@ A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.
 \newline
 The returned \cpp{continuation} indicates whether the suspended context
-has terminated (returned from toplevel function) via \opbool. If the returned
+has terminated (returned from top-level function) via \opbool. If the returned
 \cpp{continuation} has terminated, no data are transferred.
 \newline
 Because \resume invalidates the instance on which it is called, \emph{no valid
@@ -543,7 +541,7 @@ test if data are present\\
 
 \begin{description}
     \item[1)] returns \cpp{true} if \call or \resume have been invoked with
-              additonal data as argument (\cpp{args})
+              additional data as argument (\cpp{args})
 \end{description}
 
 
