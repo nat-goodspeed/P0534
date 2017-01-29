@@ -8,7 +8,7 @@
 is implemented in boost.coroutine2\cite{bcoroutine2} using \cc from
 boost.context\cite{bcontext} as building block. Each \cpp{push\_type} and
 \cpp{pull\_type} of a coroutine represents a continuation (e.g. a coroutine
-consits of two continuations).
+consist of two continuations).
 \cppf{coroutine}
 
 
@@ -17,26 +17,31 @@ consits of two continuations).
 boost.fiber\cite{bfiber} provides a framework for micro-/userland-threads
 (fibers) scheduled cooperatively. The library implements fibers on behalf of \cc
 (boost.context\cite{bcontext}). The API contains classes and functions to manage
-and synchronize fibers similiarly to standard thread support library.\\
+and synchronize fibers similar to standard thread support library.\\
 Each fiber represents a continuation.
 \cppf{fiber}
 
 
 \uabschnitt{Delimited continuations}
 
-can be implemented via \cc. \cpp{reset} delimites the continuation and
+can be implemented via \cc. \cpp{reset} delimits the continuation and
 \cpp{shift} reifies the continuation, e.g. the code that follows after
-\cpp{shift} returns is passed as continuation to \cpp{shift}. On entry \cpp{1}
-is written to \cpp{std::cout} at (a). The \cpp{shift} operator at (b) wraps the
-continuation, that means the code at (d), and passes it as argument \cpp{cont}
-at (b). \cpp{cont()} is called two times, thus (c) is executed two times before
-(d) writes \cpp{2} to \cpp{std::cout}.
+\cpp{shift} returns is passed as continuation to \cpp{shift}.\\
+
+On entry \cpp{1} is written to \cpp{std::cout} at (a). The \cpp{shift} operator
+at (b) wraps the continuation, that means the code at (d), and passes it as
+argument \cpp{cont} at (b). \cpp{cont()} is called two times, thus (c) is
+executed two times before (d) writes \cpp{2} to \cpp{std::cout}.
 \cppf{delimited}
 
 
 \uabschnitt{Backtracking}
 
-is a general algorithm for finding all (or some) solutions to some computational problems, notably constraint satisfaction problems, that incrementally builds candidates to the solutions, and abandons each partial candidate c ("backtracks") as soon as it determines that c cannot possibly be completed to a valid solution.
-
-\uabschnitt{Non-deterministic choice}
-is the ability to specify certain points in the program (called "choice points") for various alternatives for program flow.
+or non-deterministic choice is the ability to specify certain
+\emph{choice points} in the program used to for finding all (or some) solutions
+to some computational problems. The algorithm \emph{backtracks} to a previous
+\emph{choice point} as soon as it determines that current execution path does
+not complete to a valid solution.\\
+Backtracking could be implemented using two continuations, a success
+continuation that proceeds with the algorithm and a failure continuation that
+backtracks to an previous choice point.
