@@ -4,7 +4,7 @@ A continuation is a abstract concept that represents the context state at a
 given point during the execution of a program. That implies, that a continuation
 represents the remaining steps of a computation.\\
 
-As a \bfs{basic, low-level primitive} it cane be used to implement control
+As a \bfs{basic, low-level primitive} it can be used to implement control
 structures like coroutines,  generators, lightweight threads, cooperative
 multitasking (fibers), backtracking, non-deterministic choice. In classic
 event-driven programs, organized around a main loop that fetches and dispatches
@@ -14,7 +14,10 @@ sequential while using continuations.\\
 
 C and C++ already use continuations - if a routine calls a sub-routine, then a
 (hidden) continuation (the remaining steps after the sub-routine call) is
-created. This continuation is resumed when the sub-routine returns.\\
+created. This continuation is resumed when the sub-routine returns. For
+instance the x86 architecture stores the (hidden) continuation as return address
+on the stack\footnote{Other (RISC) architectures use a special micro-processor
+regsiter for this purpose.}.\\
 
 Continuations exposed as \bfs{first-class continuations} can be passed to and
 returned from functions, assigned to variables or stored into containers. With
@@ -33,9 +36,9 @@ Continuations that can be called multiple times are named
 \bfs{full continuations}.\\
 \bfs{One-shot continuations} can only resumed once (a resumed 
 \bfs{one-shot continuation} becomes invalidated); the control is transferred to
-a execution context where to continuation is no longer in scope.\\
+a execution context where the continuation is no longer in scope.\\
 Class \cpp{std::execution_context<>}, proposed in \bfs{P0099R1}\cite{P0099R1}
-already represents a one-shot-continuation.\\
+already represents a \bfs{one-shot-continuation}.\\
 
 In contrast to \cc that captures the \bfs{entire remaining} continuation, the
 operators \shift and \reset create a so called \bfs{delimited continuation}. A

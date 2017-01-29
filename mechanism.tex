@@ -7,19 +7,19 @@ point in time.\\
 processor by switching between programs (\bfs{context switch}) by
 \bfs{preserving} and \bfs{restoring} the content of \bfs{all registers}.\\
 
-For \cc no all registers have to be preserved because the calling convention,
+For \cc not all registers have to be preserved because the calling convention,
 part of the ABI, that covers how function's arguments and return values are
-passed, determines which subset of CPU registers have to be preserved by the
-called subroutine (scratch and callee-saved registers).\\
+passed, determines which subset of micro-processor registers have to be
+preserved by the called subroutine.\\
 
 As a consequence a continuation preserves the execution context, e.g. state of
-the register machine (including the stack as well as the instruction pointer).
+the register machine (including the stack as well as the instruction pointer).\\
 
 The \bfs{calling convention}\cite{SYSVABI} of \bfs{SYSV ABI} for \bfs{x86\_64}
 architecture determines that general purpose registers R12, R13, R14, R15, RBX
 and RBP have to be preserved by the sub-routine - the first arguments are passed
-to functions via RDI, RSI, RDX, RCX, R8 and R9 and values returned from
-functions in RAX, RDX.\\
+to functions via RDI, RSI, RDX, RCX, R8 and R9 and return values are stored in
+RAX, RDX.\\
 
 \asmfn{jump_x86_64.S}
 
@@ -33,7 +33,7 @@ executed after this function returns, is left on the stack. Other architectures
 store the return address in a special register (link register) instead on the
 stack. In this case the link register must be preserved too.\\
 At line (12) the stack pointer gets assigned to the address of the
-continuation that as to be resumed - in fact, the continuation represents a
+continuation that has to be resumed - in fact, the continuation represents a
 stack address (the stack pointer was passed in RDI as first argument).\\
 The return address is loaded into register R8 at line (14); with the indirect
 jump at line (28) the \bfs{continuation} is \bfs{resumed}.\\

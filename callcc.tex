@@ -2,9 +2,9 @@
 
 \cc (abbreviation of 'call with current continuation') is a universal control
 operator (well-known from languages like Scheme, Ruby, Lisp ...) that captures
-the \currcont (instructions that happen next after \cc returns) as a first-class
-object and pass it as an argument to a function that is executed in the newly
-created execution context.\\
+the \currcont (instructions that happen next after \cc returns) as a
+\bfs{first-class object} and pass it as an argument to a function that is
+executed in the newly created execution context.\\
 
 \call is the C++ equivalent to \cc, preserving the \bfs{call state} and the
 \bfs{program state} (variables).\\
@@ -12,10 +12,10 @@ created execution context.\\
 When a continuation object is applied to \resume, the existing continuation is
 eliminated and the applied continuation is restored in its place, so that the
 program flow will continue at the point at which the continuation was captured
-and the argument of the continuation then becomes the \emph{return value} of
-the \call invocation (see \nameref{mechanism}).\\
+and the currnt continuation then becomes the \emph{return value} of the \call
+invocation (see \nameref{mechanism}).\\
 
-\cont is a one-shot continuation - it can be used only once, is only
+\cont is a \bfs{one-shot continuation} - it can be used only once, is only
 move-constructible and move-assignable.
 \cppf{loop}
 
