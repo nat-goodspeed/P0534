@@ -22,14 +22,9 @@ drawbacks:
         invalid (\cpp{x2} can not be default constructed).\\
 \end{itemize}
 
-Because \cont represents a continuation it is proposed as a \bfs{pure data
-structure} (no behaviour exposed via member functions).\\
-\call expects a callable with signature
-\cpp{continuation(continuation &&,Arg ...)} as the first argument.\\
-On return the \entryfn has to specify an \cont to which the execution control is
-transferred.\\
-If an instance with valid state goes out of scope and the \entryfn has not yet
-returned, the stack is traversed  and continuation's stack is deallocated.
+Because \cont represents a continuation (it \bfs{aggregates} only its
+\bfs{stack pointer} as member variable) it is proposed as a
+\bfs{pure data structure} (no behaviour exposed via member functions).
 
 
 \uabschnitt{Passing data}\label{subsec:data}
@@ -251,7 +246,7 @@ destroys an continuation\\
     \item[1)] destroys a \cont instance. If this instance represents a context
               of execution (\opbool returns \cpp{true}), then the context of
               execution is destroyed too. Specifically, the stack is unwound. As
-              noted in \nameref{subpara:destruction}, an implementation is free to
+              noted in \nameref{subsec:destruction}, an implementation is free to
               unwind the stack either by throwing an unnamed exception or by
               intrinsics not requiring \cpp{throw}.
 \end{description}
@@ -311,7 +306,7 @@ number of reasons.
     \item It might have been assigned to another instance, or passed into a
           function.\\
           \cont instances are move-only.
-    \item It might already have been resumed (\resume called). Calling \resume
+    \item It might already have been resumed (\resume called) - calling \resume
           invalidates the instance.
     \item The top-level context-function might have voluntarily terminated the
           context by returning.
@@ -439,7 +434,7 @@ into a continuation and passed as argument to the new context\\
 {\bfseries Parameters}
 \begin{description}
     \item[fn]      callable (function, lambda, functor) executed in the new
-                   context
+                   context; expected signature \cpp{continuation(continuation &&)} 
     \item[...args] data transferred to the new context - see section
                    \nameref{subsec:data}\\
 \end{description}
@@ -462,10 +457,13 @@ into a continuation and passed as argument to the new context\\
 \call preserves the execution context of the calling context as well as stack
 parts like \emph{parameter list} and \emph{return address}.
 \footnote{required only by some x86 ABIs} Those data are restored if the calling
-context is resumed.
-\newline
+context is resumed.\\
 A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
-up at that time.
+up at that time.\\
+On return \cpp{fn} has to specify an \cont to which the execution control is
+transferred.\\
+If an instance with valid state goes out of scope and the \cpp{fn} has not yet
+returned, the stack is traversed  and continuation's stack is deallocated.
 
 
 \uabschnitt{std::resume()}
