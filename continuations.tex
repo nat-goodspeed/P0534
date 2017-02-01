@@ -39,6 +39,9 @@ Continuations that can be called multiple times are named
 a execution context where the continuation is no longer in scope.\\
 Class \cpp{std::execution_context<>}, proposed in \bfs{P0099R1}\cite{P0099R1}
 already represents a \bfs{one-shot-continuation}.\\
+\bfs{Full continuations} are \bfs{not} considered in this proposal because of
+their, in C++ problematic, nature.  Full continuations would require copies of
+the stack (including the variables) as well as violates C++'s RAII pattern.\\
 
 In contrast to \cc that captures the \bfs{entire remaining} continuation, the
 operators \shift and \reset create a so called \bfs{delimited continuation}. A
