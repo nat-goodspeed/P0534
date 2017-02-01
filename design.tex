@@ -9,7 +9,7 @@ Because \cont represents a continuation (it \bfs{aggregates} only its
 
 Data are passed to another context as additional arguments of \call and
 \resume.\\
-With functions \davail and \dtransfer the code can test for data and if desired
+With functions \davail and \dget the code can test for data and if desired
 transfer the data.
 \cppf{passing_single}
 The \cpp{callcc()} call at (a) enters the lambda and passes \cpp{j=1} into the
@@ -34,7 +34,7 @@ facility is intended as a high-performance foundation for higher-level
 libraries. It is not intended to be directly consumed by applications.\\
 Multiple arguments can be transferred into another continuation too.
 \cppf{passing_multiple}
-\call takes the parameters \cpp{i} and \cpp{j} that are returned from \dtransfer
+\call takes the parameters \cpp{i} and \cpp{j} that are returned from \dget
 as \cpp{std::tuple} of \cpp{int}.
 
 
@@ -543,7 +543,7 @@ test if data are present\\
 \end{description}
 
 
-\uabschnitt{std::transfer\_data()}
+\uabschnitt{std::get\_data()}
 
 transfer of data\\
 
@@ -551,12 +551,12 @@ transfer of data\\
     \midrule
 
     \cpp{template< typename Arg >}\\
-    \cpp{Arg transfer\_data( continuation && c)} & (1)\\
+    \cpp{Arg get\_data( continuation && c)} & (1)\\
 
     \midrule
 
     \cpp{template< typename ...Args >}\\
-    \cpp{std::tuple< Args... > transfer\_data( continuation && c)} & (2)\\
+    \cpp{std::tuple< Args... > get\_data( continuation && c)} & (2)\\
 
     \midrule
 \end{tabular}

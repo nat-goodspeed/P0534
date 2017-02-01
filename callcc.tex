@@ -38,14 +38,14 @@ The presented code prints out \cpp{"foo"} and \cpp{"bar"} in a endless loop.\\
 
 In order to transfer data, \call as well as \resume accept arguments, that are
 stored on the stack of the \currcont. Function \davail tests if data have been
-passed and with \dtransfer the data can be accessed.
+passed and with \dget the data can be accessed.
 \cppf{fibonacci}
 
 The invocation of \call at (a) immediately enters the lambda, passing no data
 but the \currcont. The lambda calculates the fibonacci number on behalf of local
 variables \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is
 transferred via \resume at (b). The execution control returns and \cpp{c2}
-represents the continuation of the lambda. With \dtransfer at (c) the fibonacci
+represents the continuation of the lambda. With \dget at (c) the fibonacci
 number is transferred to the current context while at (d) the lambda is entered
 again in order to compute the next fibonacci number (without passing parameter
 to the lambda).
