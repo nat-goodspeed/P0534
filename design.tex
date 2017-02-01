@@ -1,27 +1,5 @@
 \abschnitt{Design}\label{design}
 
-Beside the name clashes with the executor and network proposals, \ectx has some
-drawbacks:
-\begin{itemize}
-    \item The API P0099R1 allows to call
-        \cpp{operator()(std::invoke\_ontop\_arg,fn &&,Args...)} on a newly
-        created \ectx which results in undefined behaviour (the context is
-        required to be entered at least one time before it is permitted to
-        invoke a function ontop of the context).
-    \item \ectx forces to transfer data in both directions, even if it is not
-        required, for instance generators must pass (and pay for)
-        \bfs{dummy data} in one direction.
-    \item \ectx allows to transferre only data of a fixed type (template
-        argument), but the implementation experience of boost.coroutine2 and
-        boost.fiber showed that implementations of higher-level abstractions
-        might require to transfer data of different types or no data at all
-        (for instance during initialization phase).
-    \item If the data type used by \ectx (template argument) is not default
-        constructible and the context-function simply returns (no data
-        transferred back) the expression \cpp{auto [ctx2,y2]=ctx1(x1)} is
-        invalid (\cpp{x2} can not be default constructed).\\
-\end{itemize}
-
 Because \cont represents a continuation (it \bfs{aggregates} only its
 \bfs{stack pointer} as member variable) it is proposed as a
 \bfs{pure data structure} (no behaviour exposed via member functions).
