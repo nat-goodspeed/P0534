@@ -4,13 +4,13 @@ std::continuation c1=
         [](std::continuation && c2){
             int j=std::transfer_data<int>(c2); // (b)
             std::cout << "inside ctx1,j==" << j << std::endl;
-            c2=std::resume(std::move(c2),j+1); // (c)
+            c2=c2(j+1); // (c)
             return std::move(c2); // (f)
         },
         i);
 i=std::transfer_data<int>(c1); // (d)
 std::cout << "i==" << i << std::endl;
-c1=std::resume(std::move(c1)); // (e)
+c1=c1(); // (e)
 
 output:
     inside c1,j==1

@@ -9,7 +9,7 @@ only status queries).
 \uabschnitt{Passing data}\label{subsec:data}
 
 Data are passed to another context as additional arguments of \call and
-\resume.\\
+\op.\\
 With functions \davail and \dget the code can test for data and if desired
 transfer the data.
 \cppf{passing_single}
@@ -20,8 +20,8 @@ within the lambda by \cpp{c2}) and transfers back an integer of \cpp{j+1}.
 The assignment at (d) sets \cpp{i} to \cpp{j+1}.\\
 The call to \cpp{callcc(c1)} (note that no data is passsed) at (e) resumes the
 \cpp{c1} lambda, returning from the \cpp{callcc(c2,j+1)} call at (c). Here, too,
-we replace the \cont instance \cpp{c2} invalidated by the \resume call at (c)
-with the new instance returned by that same \resume call.\\
+we replace the \cont instance \cpp{c2} invalidated by the \op call at (c)
+with the new instance returned by that same \op call.\\
 Finally the lambda returns (the updated) \cpp{c2} at (f), terminating its
 context.\\
 Since the updated \cpp{c2} represents the continuation suspended by the call at
@@ -70,7 +70,7 @@ Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
 undefined behavior.\\
 If the \entryfn returns the same \cont instance it was originally
 passed (or rather, the most recently updated instance returned from the
-previous instance's \call or \resume), control returns to the context that most
+previous instance's \call or \op), control returns to the context that most
 recently resumed the running callable. However, the callable may return (switch
 to) any reachable valid \cont instance.
 
@@ -83,7 +83,7 @@ called.
 \uabschnitt{Invoke function on top of a continuation}
 Sometimes it is useful to invoke a new function (for instance, to throw an
 exception) on top of a continuation. For this purpose you may pass to\\
-\cpp{resume(continuation &&,invoke\_ontop\_arg\_t,Fn &&,Args ...)}:
+\cpp{operator()(invoke\_ontop\_arg\_t,Fn &&,Args ...)}:
 
 \begin{itemize}
   \item the special argument \cpp{invoke\_ontop\_arg}
@@ -98,13 +98,13 @@ deallocated).\\
 Suppose that code running on the program's main context calls \cpp{callcc(f)},
 thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
 and passed into \cpp{f()}.\\
-Suppose further that after doing some work, \cpp{f()} calls \cpp{resume(mc)},
+Suppose further that after doing some work, \cpp{f()} calls \cpp{mc()},
 thereby switching context back to the main context. \cpp{f()} remains suspended
-in the call to \cpp{resume(mc)}.\\
-At this point the main context calls \cpp{resume(fc,invoke\_ontop\_arg, g);}
+in the call to \cpp{mc()}.\\
+At this point the main context calls \cpp{fc(invoke\_ontop\_arg, g);}
 where \cpp{g()} is declared as\\
 \cpp{void g(continuation &);} \cpp{g()} is entered in the context of \cpp{f()}.
-It is as if \cpp{f()}'s call to \cpp{resume(mc)} directly called \cpp{g()}.\\
+It is as if \cpp{f()}'s call to \cpp{mc()} directly called \cpp{g()}.\\
 Function \cpp{g()} has the same range of possibilities as any function called on
 \cpp{f()}'s context. Its special invocation only matters when control leaves it
 in either of two ways:
@@ -116,15 +116,15 @@ in either of two ways:
         if there is no matching \cpp{catch} clause in that context,
         \cpp{std::terminate()} is called.}
   \item If \cpp{g()} returns, its return value becomes the value returned by
-        \cpp{f()}'s suspended \cpp{resume(mc)} call.
+        \cpp{f()}'s suspended \cpp{mc()} call.
 \end{enumerate}
 
 \cppf{ontop}
 
 Control passes from (a) to (b) to (c), and so on.\\
-The \cpp{resume(c,invoke\_ontop\_arg, f2, data+1)} call at (i) passes control
+The \cpp{c(invoke\_ontop\_arg, f2, data+1)} call at (i) passes control
 to \cpp{f2()} on the continuation of \cpp{f1()}.\\
-The \cpp{return} statement at (j) causes the \resume call at (g) to return,
+The \cpp{return} statement at (j) causes the \op call at (g) to return,
 executing the assignment at (k). The \cpp{int} returned by \cpp{f2()} is
 accessed at (l).\\
 Finally, \cpp{f1()} returns its own \cpp{c} variable, switching back to the main
@@ -256,6 +256,85 @@ moves the continuation object\\
     \item[*this]
 \end{description}
 
+
+\subparagraph*{operator()}
+resumes a continuation\\
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{template< typename ...Args >}\\
+    \cpp{continuation operator()( Args ... args)} & (1)\\
+
+    \midrule
+
+    \cpp{template< typename Fn, typename ...Args >}\\
+    \cpp{continuation operator()( invoke\_ontop\_arg\_t, Fn && fn, Args ... args)} & (2)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] suspends the active context, resumes continuation \cpp{*this}
+    \item[2)] suspends the active context, resumes continuation \cpp{*this} but
+              invokes \cpp{fn(args ...)} in the resumed context (on top of the
+              last stack frame)
+\end{description}
+
+{\bfseries Parameters}
+\begin{description}
+    \item[...args] passed to the resumed continuation - see section
+                   \nameref{subsec:data}\\
+\end{description}
+
+{\bfseries Return value}
+\begin{description}
+    \item[continuation] the returned instance represents the execution context
+                        (continuation) that has been suspended in order to
+                        resume the current context
+\end{description}
+
+{\bfseries Exceptions}
+\begin{description}
+    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
+              \cpp{fn}\\
+\end{description}
+
+{\bfseries Preconditions}
+\begin{description}
+    \item[1)] \cpp{*this} represents a context of execution (\opbool returns
+               \cpp{true})
+    \item[2)] \cpp{any\_thread(*this)} returns \cpp{true}, or the running thread is
+              the same thread on which \cpp{c} ran previously.
+\end{description}
+
+{\bfseries Postcondition}
+\begin{description}
+    \item[1)] \cpp{*this} is invalidated (\opbool returns \cpp{false})
+\end{description}
+
+{\bfseries Notes}
+\newline
+\op preserves the execution context of the calling context as well as stack
+parts like \emph{parameter list} and \emph{return address}.\footnote{required
+only by some x86 ABIs} Those data are restored if the calling context is
+resumed.
+\newline
+A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
+up at that time.
+\newline
+The returned \cpp{continuation} indicates whether the suspended context
+has terminated (returned from \entryfn) via \opbool. If the returned
+\cpp{continuation} has terminated, no data may be retrieved.
+\newline
+Because \op invalidates the instance on which it is called, \emph{no valid
+\cont instance ever represents the currently-running context.}
+\newline
+When calling \op, it is conventional to replace the newly-invalidated
+instance -- the instance passed to \op -- with the new instance
+returned by that \op call. This helps to avoid inadvertent calls to \op
+with the old, invalidated instance.
+
 \subparagraph*{operator bool}
 test whether continuation is valid\\
 
@@ -281,7 +360,7 @@ number of reasons.
     \item It might have been assigned to another instance, or passed into a
           function.\\
           \cont instances are move-only.
-    \item It might already have been resumed (\resume called) - calling \resume
+    \item It might already have been resumed (\op called) - calling \op
           invalidates the instance.
     \item The \entryfn might have voluntarily terminated the
           context by returning.
@@ -441,87 +520,6 @@ If an instance with valid state goes out of scope and the \cpp{fn} has not yet
 returned, the stack is traversed  and continuation's stack is deallocated.
 
 
-\uabschnitt{std::resume()}
-
-resumes a continuation\\
-
-\begin{tabular}{ l l }
-    \midrule
-
-    \cpp{template< typename ...Args >}\\
-    \cpp{continuation resume( continuation && c, Args ... args)} & (1)\\
-
-    \midrule
-
-    \cpp{template< typename Fn, typename ...Args >}\\
-    \cpp{continuation resume( continuation && c, invoke\_ontop\_arg\_t, Fn && fn, Args ... args)} & (2)\\
-
-    \midrule
-\end{tabular}
-
-\begin{description}
-    \item[1)] suspends the active context, resumes continuation \cpp{c}
-    \item[2)] suspends the active context, resumes continuation \cpp{c} but
-              invokes \cpp{fn(args ...)} in the resumed context (on top of the
-              last stack frame)
-\end{description}
-
-{\bfseries Parameters}
-\begin{description}
-    \item[c]       continuation that gets resumed
-    \item[...args] passed to the resumed continuation - see section
-                   \nameref{subsec:data}\\
-\end{description}
-
-{\bfseries Return value}
-\begin{description}
-    \item[continuation] the returned instance represents the execution context
-                        (continuation) that has been suspended in order to
-                        resume the current context
-\end{description}
-
-{\bfseries Exceptions}
-\begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
-              \cpp{fn}\\
-\end{description}
-
-{\bfseries Preconditions}
-\begin{description}
-    \item[1)] \cpp{c} represents a context of execution (\opbool returns
-               \cpp{true})
-    \item[2)] \cpp{any\_thread(c)} returns \cpp{true}, or the running thread is
-              the same thread on which \cpp{c} ran previously.
-\end{description}
-
-{\bfseries Postcondition}
-\begin{description}
-    \item[1)] \cpp{c} is invalidated (\opbool returns \cpp{false})
-\end{description}
-
-{\bfseries Notes}
-\newline
-\resume preserves the execution context of the calling context as well as stack
-parts like \emph{parameter list} and \emph{return address}.\footnote{required
-only by some x86 ABIs} Those data are restored if the calling context is
-resumed.
-\newline
-A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
-up at that time.
-\newline
-The returned \cpp{continuation} indicates whether the suspended context
-has terminated (returned from \entryfn) via \opbool. If the returned
-\cpp{continuation} has terminated, no data may be retrieved.
-\newline
-Because \resume invalidates the instance on which it is called, \emph{no valid
-\cont instance ever represents the currently-running context.}
-\newline
-When calling \resume, it is conventional to replace the newly-invalidated
-instance -- the instance passed to \resume -- with the new instance
-returned by that \resume call. This helps to avoid inadvertent calls to \resume
-with the old, invalidated instance.
-
-
 \uabschnitt{std::data\_available()}
 
 test if data are present\\
@@ -535,7 +533,7 @@ test if data are present\\
 \end{tabular}
 
 \begin{description}
-    \item[1)] returns \cpp{true} if \call or \resume have been invoked with
+    \item[1)] returns \cpp{true} if \call or \op have been invoked with
               additional data as argument (\cpp{args})
 \end{description}
 
@@ -567,7 +565,7 @@ transfer of data\\
 {\bfseries Notes}
 \newline
 The template argument(s) passed to \cpp{get\_data()} must match in number and
-type the actual argument types passed to \call or \resume.
+type the actual argument types passed to \call or \op.
 
 \uabschnitt{std::any\_thread()}
 

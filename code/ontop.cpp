@@ -2,11 +2,11 @@ std::continuation f1(std::continuation && c) {
     int data=std::transfer_data<int>(c); // (b)
     std::cout << "f1: entered first time: " << data << std::endl;
     c = // (f)
-       std::resume(c,data+1); // (c)
+       c(data+1); // (c)
     data=std::transfer_data<int>(c);
     std::cout << "f1: entered second time: " << data << std::endl;
     c = // (k)
-       std::resume(c,data+1); // (g)
+       c(data+1); // (g)
     data=std::transfer_data<int>(c); // (l)
     std::cout << "f1: entered third time: " << data << std::endl;
     return std::move(c); // (m)
@@ -24,11 +24,11 @@ std::continuation c= // (d)
 data=std::transfer_data<int>(c);
 std::cout << "f1: returned first time: " << data << std::endl;
 c = // (h)
-    std::resume(c,data+1); // (e)
+    c(data+1); // (e)
 data=std::transfer_data<int>(c);
 std::cout << "f1: returned second time: " << data << std::endl;
 c = // (n)
-    std::resume(c,std::invoke_ontop_arg,f2,data+1); // (i)
+    c(std::invoke_ontop_arg,f2,data+1); // (i)
 data=std::transfer_data<int>(c);
 std::cout << "f1: returned third time: " << data << std::endl;
 

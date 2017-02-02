@@ -15,10 +15,4 @@ continuation callcc( std::allocator_arg_t, StackAlloc salloc, Fn && fn, Arg ... 
 template< typename StackAlloc, typename Fn, typename ... Arg >
 continuation callcc( std::allocator_arg_t, preallocated palloc, StackAlloc salloc, Fn && fn, Arg ... arg);
 
-template< typename ... Arg >
-continuation resume( continuation && c, Arg ... arg);
-
-template< typename Fn, typename ... Arg >
-continuation resume( continuation && c, exec_ontop_arg_t, Fn && fn, Arg ... arg);
-
 void swap( continuation & l, continuation & r) noexcept;

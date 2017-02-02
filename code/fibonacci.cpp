@@ -4,7 +4,7 @@ std::continuation c2=
             int a=0;
             int b=1;
             for(;;){
-                c1=std::resume(std::move(c1),a); // (b)
+                c1=c1(a); // (b)
                 int next=a+b;
                 a=b;
                 b=next;
@@ -14,7 +14,7 @@ std::continuation c2=
 for (int j=0;j<10;++j) {
     int i=std::transfer_data<int>(c2); // (c)
     std::cout << i << " ";
-    c2=std::resume(std::move(c2)); // (d)
+    c2=c2(); // (d)
 }
 
 output:
