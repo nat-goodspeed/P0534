@@ -15,10 +15,10 @@ consist of two continuations).
 \uabschnitt{Cooperative multi-tasking:}
 
 boost.fiber\cite{bfiber} provides a framework for micro-/userland-threads
-(fibers) scheduled cooperatively. The library implements fibers on behalf of \cc
+(fibers) scheduled cooperatively. The library implements fibers using \cc
 (boost.context\cite{bcontext}). The API contains classes and functions to manage
 and synchronize fibers similar to standard thread support library.\\
-Each fiber represents a continuation.
+Each fiber is implemented using a continuation.
 \cppf{fiber}
 
 
@@ -29,7 +29,7 @@ can be implemented via \cc. \cpp{reset} delimits the continuation and
 \cpp{shift} returns is passed as continuation to \cpp{shift}.\\
 
 On entry \cpp{1} is written to \cpp{std::cout} at (a). The \cpp{shift} operator
-at (b) wraps the continuation, that means the code at (d), and passes it as
+at (b) wraps the continuation, that means the code at (c), and passes it as
 argument \cpp{cont} at (b). \cpp{cont()} is called two times, thus (c) is
 executed two times before (d) writes \cpp{2} to \cpp{std::cout}.
 \cppf{delimited}

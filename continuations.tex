@@ -1,7 +1,7 @@
 \abschnitt{Continuations}
 
-A continuation is a abstract concept that represents the context state at a
-given point during the execution of a program. That implies, that a continuation
+A continuation is an abstract concept that represents the context state at a
+given point during the execution of a program. That implies that a continuation
 represents the remaining steps of a computation.\\
 
 As a \bfs{basic, low-level primitive} it can be used to implement control
@@ -27,10 +27,10 @@ function on exact the point were it has been exited previously).\\
 Making the program state visible via a first-class continuations is known as
 \bfs{reification}.\\
 
-The continuation of the computation step, derived from the current point in a
-program's execution, is called \bfs{current continuation} (\cc captures the
-\bfs{current continuation} and passes it as argument of the function invoked by
-\cc).\\
+The continuation of the computation step derived from the current point in a
+program's execution is called the \bfs{current continuation}. \cc captures the
+\bfs{current continuation} and passes it as the argument of the function invoked by
+\cc.\\
 
 Continuations that can be called multiple times are named
 \bfs{full continuations}.\\

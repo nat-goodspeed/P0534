@@ -1,8 +1,9 @@
 \abschnitt{Design}\label{design}
 
-Because \cont represents a continuation (it \bfs{aggregates} only its
+Because \cont represents a continuation (it \bfs{contains} only its
 \bfs{stack pointer} as member variable) it is proposed as a
-\bfs{pure data structure} (no behaviour exposed via member functions).
+\bfs{pure data structure} (no behaviour exposed via member functions,
+only status queries).
 
 
 \uabschnitt{Passing data}\label{subsec:data}
@@ -38,39 +39,40 @@ Multiple arguments can be transferred into another continuation too.
 as \cpp{std::tuple} of \cpp{int}.
 
 
-\uabschnitt{Toplevel functions: main() and thread functions}\label{subsec:main}
+\uabschnitt{main() and thread functions}\label{subsec:main}
 
-\main as well as the \entryfn of a thread can be represented by an continuation.
+\main as well as the \entryfn of a thread can be represented by a continuation.
 That \cont instance is synthesized when the running context suspends, and is
 passed into the newly-resumed continuation.
 \cppf{simple}
-The \cpp{calcc()} call at (a) enters the lambda. The \cont\ \cpp{c2} at (b)
+The \cpp{callcc()} call at (a) enters the lambda. The \cont\ \cpp{c2} at (b)
 represents the execution context of \main. Returning \cpp{c2} at (c) resumes the
 original context (switch back to \main).
 
 
 \uabschnitt{\cc and std::thread}
 Any continuation represented by a valid \cont instance is necessarily suspended.\\
-It is valid to resume a \cont instance on any thread -- \emph{except} that you
-must not attempt to resume a \cont instance representing \main, or
-the \emph{entry-function} of some other \cpp{std::thread}, on any thread other
-than its own (because of the stack). \cont provides a method to test for this.\\
-If \cpp{std::continuation<>::any\_thread()} returns \cpp{false}, it is
+It is valid to resume a \cont instance on any thread -- \emph{except} that
+since the operating system is responsible for the stack allocated for \main,
+as well as each \cpp{std::thread}, you must not attempt to resume a \cont
+instance representing any such context on any thread other
+than its own. \cpp{any\_thread()} tests for this.\\
+If \cpp{std::any\_thread()} returns \cpp{false}, it is
 only valid to resume that \cont instance on the thread on which it was initially
 launched.
 
 
 \uabschnitt{Termination}
-When that toplevel callable returns a \cont instance, the continuation is
-terminated. Control switches to the continuation indicated by the returned \cont
-instance.\\
+When the \entryfn invoked by \cc returns a valid \cont instance,
+the running context is terminated. Control switches to the continuation
+indicated by the returned \cont instance.\\
 Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
 undefined behavior.\\
-If the toplevel callable returns the same \cont instance it was originally
+If the \entryfn returns the same \cont instance it was originally
 passed (or rather, the most recently updated instance returned from the
 previous instance's \call or \resume), control returns to the context that most
 recently resumed the running callable. However, the callable may return (switch
-to) any reachable valid \cont instance with the correct type signature.
+to) any reachable valid \cont instance.
 
 
 \uabschnitt{Exceptions}\label{subsec:exceptions}
@@ -91,11 +93,9 @@ exception) on top of a continuation. For this purpose you may pass to\\
 
 The function passed in this case must accept a reference of \cont (in order to
 pass the continuation in a thrown exception - otherwise the continuation gets
-deallocated). It must return the same set of arguments as to the
-\resume specialization.\footnote{But in the case of passing no arguments, the
-return type is simply \cpp{void}.}\\
+deallocated).\\
 
-Suppose that code running on the program's main context calls \cpp{calcc(fc)},
+Suppose that code running on the program's main context calls \cpp{callcc(f)},
 thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
 and passed into \cpp{f()}.\\
 Suppose further that after doing some work, \cpp{f()} calls \cpp{resume(mc)},
@@ -116,9 +116,7 @@ in either of two ways:
         if there is no matching \cpp{catch} clause in that context,
         \cpp{std::terminate()} is called.}
   \item If \cpp{g()} returns, its return value becomes the value returned by
-        \cpp{f()}'s suspended \cpp{resume(mc)} call. This is why \cpp{g()}'s
-        return type must be the same as that of \resume, rather than that of an
-        ordinary toplevel context function.
+        \cpp{f()}'s suspended \cpp{resume(mc)} call.
 \end{enumerate}
 
 \cppf{ontop}
@@ -135,11 +133,10 @@ context.
 
 \uabschnitt{Stack destruction}\label{subsec:destruction}
 On construction of a continuation with \call a stack is allocated. If the
-toplevel \entryfn returns, the stack will be destroyed. If the function has not
+\entryfn returns, the stack will be destroyed. If the function has not
 yet returned and the \nameref{subpara:destructor} of a valid \cont instance (\opbool
 returns \cpp{true}) is called, the stack will be unwound and destroyed.
 \footnote{An implementation is free to unwind the stack without throwing an
-exception. However, if an exception is thrown, it should be a unnamed
 exception.}\\
 The stack on which \cpp{main()} is executed, as well as the stack implicitly
 created by \cpp{std::thread}'s constructor, is allocated by the operating
@@ -210,7 +207,7 @@ constructs new continuation\\
 \end{description}
 
 \subparagraph*{(destructor)}\label{subpara:destructor}
-destroys an continuation\\
+destroys a continuation\\
 
 \begin{tabular}{ l l }
     \midrule
@@ -225,7 +222,7 @@ destroys an continuation\\
               of execution (\opbool returns \cpp{true}), then the context of
               execution is destroyed too. Specifically, the stack is unwound. As
               noted in \nameref{subsec:destruction}, an implementation is free to
-              unwind the stack either by throwing an unnamed exception or by
+              unwind the stack either by throwing an exception or by
               intrinsics not requiring \cpp{throw}.
 \end{description}
 
@@ -286,7 +283,7 @@ number of reasons.
           \cont instances are move-only.
     \item It might already have been resumed (\resume called) - calling \resume
           invalidates the instance.
-    \item The top-level context-function might have voluntarily terminated the
+    \item The \entryfn might have voluntarily terminated the
           context by returning.
 \end{itemize}
 The essential points:
@@ -426,7 +423,7 @@ into a continuation and passed as argument to the new context\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes top-level
+    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
               \cpp{fn}\\
 \end{description}
 
@@ -438,7 +435,7 @@ parts like \emph{parameter list} and \emph{return address}.
 context is resumed.\\
 A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.\\
-On return \cpp{fn} has to specify an \cont to which the execution control is
+On return \cpp{fn} has to specify a \cont to which the execution control is
 transferred.\\
 If an instance with valid state goes out of scope and the \cpp{fn} has not yet
 returned, the stack is traversed  and continuation's stack is deallocated.
@@ -485,7 +482,7 @@ resumes a continuation\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes top-level
+    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
               \cpp{fn}\\
 \end{description}
 
@@ -493,7 +490,7 @@ resumes a continuation\\
 \begin{description}
     \item[1)] \cpp{c} represents a context of execution (\opbool returns
                \cpp{true})
-    \item[2)] \cpp{any\_thread()} returns \cpp{true}, or the running thread is
+    \item[2)] \cpp{any\_thread(c)} returns \cpp{true}, or the running thread is
               the same thread on which \cpp{c} ran previously.
 \end{description}
 
@@ -513,16 +510,16 @@ A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.
 \newline
 The returned \cpp{continuation} indicates whether the suspended context
-has terminated (returned from top-level function) via \opbool. If the returned
-\cpp{continuation} has terminated, no data are transferred.
+has terminated (returned from \entryfn) via \opbool. If the returned
+\cpp{continuation} has terminated, no data may be retrieved.
 \newline
 Because \resume invalidates the instance on which it is called, \emph{no valid
 \cont instance ever represents the currently-running context.}
 \newline
 When calling \resume, it is conventional to replace the newly-invalidated
-instance -- the instance on which \resume was called -- with the new instance
+instance -- the instance passed to \resume -- with the new instance
 returned by that \resume call. This helps to avoid inadvertent calls to \resume
-on the old, invalidated instance.
+with the old, invalidated instance.
 
 
 \uabschnitt{std::data\_available()}
@@ -567,6 +564,10 @@ transfer of data\\
               context
 \end{description}
 
+{\bfseries Notes}
+\newline
+The template argument(s) passed to \cpp{get\_data()} must match in number and
+type the actual argument types passed to \call or \resume.
 
 \uabschnitt{std::any\_thread()}
 
@@ -591,6 +592,6 @@ As stated in \nameref{subsec:main}, a \cont instance can represent the initial
 context on which the operating system runs \main, or the context created by
 the operating system for a new \cpp{std::thread}.
 
-It is not permitted to attempt to resume such a \cont instance on any thread
-other than its original thread. \cpp{any\_thread()} allows consumer code to
-distinguish this case.
+Attempting to resume such a \cont instance on any thread other than its
+original thread invokes undefined behavior. \cpp{any\_thread()} allows
+consumer code to distinguish this case by returning \cpp{false}.
