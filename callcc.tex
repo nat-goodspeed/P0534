@@ -42,7 +42,7 @@ passed and with \dget the data can be accessed.
 \cppf{fibonacci}
 
 The invocation of \call at (a) immediately enters the lambda, passing no data
-but the \currcont. The lambda calculates the fibonacci number on behalf of local
+but the \currcont. The lambda calculates the fibonacci number using local
 variables \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is
 transferred via \resume at (b). The execution control returns and \cpp{c2}
 represents the continuation of the lambda. With \dget at (c) the fibonacci

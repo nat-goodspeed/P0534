@@ -4,7 +4,7 @@ std::continuation c2=
             int a=0;
             int b=1;
             for(;;){
-                c=std::resume(std::move(c1),a); // (b)
+                c1=std::resume(std::move(c1),a); // (b)
                 int next=a+b;
                 a=b;
                 b=next;
