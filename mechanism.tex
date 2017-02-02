@@ -45,4 +45,6 @@ The stack address, preserved in RAX at line (10), of the
 In fact, \cc is an extended function call; while some \bfs{general purpose
 registers}, defined by the calling convention, are preserved, additionally the
 \bfs{stack pointer} and \bfs{instruction pointer} are preserved and exchanged
-too - for code that invokes \cc it behaves like an ordinary function call.
+too - for code that invokes \cc it behaves like an ordinary function call.\\
+In other words, \cc acts on the level of simple function invokation - with the
+same performance characteristics (view CPU cycles).
