@@ -12,7 +12,7 @@ std::continuation f1(std::continuation && c) {
     return std::move(c); // (m)
 }
 
-int f2(std::continuation & c) {
+int f2(std::continuation && c) {
     int data=std::transfer_data<int>(c);
     std::cout << "f2: entered: " << data << std::endl;
     return -1; // (j)

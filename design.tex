@@ -103,7 +103,7 @@ thereby switching context back to the main context. \cpp{f()} remains suspended
 in the call to \cpp{mc()}.\\
 At this point the main context calls \cpp{fc(invoke\_ontop\_arg, g);}
 where \cpp{g()} is declared as\\
-\cpp{void g(continuation &);} \cpp{g()} is entered in the context of \cpp{f()}.
+\cpp{void g(continuation &&);} \cpp{g()} is entered in the context of \cpp{f()}.
 It is as if \cpp{f()}'s call to \cpp{mc()} directly called \cpp{g()}.\\
 Function \cpp{g()} has the same range of possibilities as any function called on
 \cpp{f()}'s context. Its special invocation only matters when control leaves it
@@ -284,7 +284,8 @@ resumes a continuation\\
 {\bfseries Parameters}
 \begin{description}
     \item[...args] passed to the resumed continuation - see section
-                   \nameref{subsec:data}\\
+                   \nameref{subsec:data}
+    \item[fn] function invoked ontop of resumed continuation\\
 \end{description}
 
 {\bfseries Return value}
