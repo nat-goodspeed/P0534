@@ -7,7 +7,7 @@ and network proposals, \ectx has some drawbacks:
         \cpp{operator()(std::invoke\_ontop\_arg,fn &&,Args...)} on a newly
         created \ectx, which results in undefined behaviour: the context
         must be entered at least one time before it is permitted to
-        invoke a function ontop of the context.
+        invoke a function on top of the context.
     \item \ectx mandates data transfer in both directions, even when not
         required. For instance, generators must pass (and pay for)
         \bfs{dummy data} in one direction.

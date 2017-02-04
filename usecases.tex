@@ -1,3 +1,4 @@
+\newpage
 \abschnitt{Use cases}
 
 \cc can be used to implement several higher-level abstractions.
@@ -6,9 +7,9 @@
 \uabschnitt{Asymmetric coroutines: N3708}
 
 is implemented in boost.coroutine2\cite{bcoroutine2} using \cc from
-boost.context\cite{bcontext} as building block. Each \cpp{push\_type} and
-\cpp{pull\_type} of a coroutine represents a continuation (e.g. a coroutine
-consist of two continuations).
+boost.context\cite{bcontext} as a building block. Each \cpp{push\_type} and
+\cpp{pull\_type} of a coroutine represents a continuation (i.e. a coroutine
+consists of two continuations).
 \cppf{coroutine}
 
 
@@ -17,16 +18,16 @@ consist of two continuations).
 boost.fiber\cite{bfiber} provides a framework for micro-/userland-threads
 (fibers) scheduled cooperatively. The library implements fibers using \cc
 (boost.context\cite{bcontext}). The API contains classes and functions to manage
-and synchronize fibers similar to standard thread support library.\\
+and synchronize fibers, similar to the standard thread support library.\\
 Each fiber is implemented using a continuation.
 \cppf{fiber}
 
 
-\uabschnitt{Delimited continuations}
+\uabschnitt{Delimited continuations}\label{delimited}
 
 can be implemented via \cc. \cpp{reset} delimits the continuation and
-\cpp{shift} reifies the continuation, e.g. the code that follows after
-\cpp{shift} returns is passed as continuation to \cpp{shift}.\\
+\cpp{shift} reifies the continuation, i.e. the code that follows after
+\cpp{shift} returns is passed as a continuation to \cpp{shift}.\\
 
 On entry \cpp{1} is written to \cpp{std::cout} at (a). The \cpp{shift} operator
 at (b) wraps the continuation, that means the code at (c), and passes it as
@@ -40,8 +41,8 @@ executed two times before (d) writes \cpp{2} to \cpp{std::cout}.
 or non-deterministic choice is the ability to specify certain
 \emph{choice points} in the program used to for finding all (or some) solutions
 to some computational problems. The algorithm \emph{backtracks} to a previous
-\emph{choice point} as soon as it determines that current execution path does
-not complete to a valid solution.\\
+\emph{choice point} as soon as it determines that the current execution path cannot
+reach a valid solution.\\
 Backtracking could be implemented using two continuations, a success
 continuation that proceeds with the algorithm and a failure continuation that
-backtracks to an previous choice point\cite{Ferguson}.
+backtracks to a previous choice point\cite{Ferguson}.

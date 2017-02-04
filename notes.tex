@@ -2,8 +2,9 @@
 
 \uabschnitt{GPU}
 
-\cc as proposed in this paper does not GPUs into account but further revisions
-will address this issue.
+\cc as proposed in this paper does not take GPUs into account. Later revisions
+will address this issue, once we have an overarching concept of how the various
+kinds of ``lightweight execution agents'' should interact.
 
 
 \uabschnitt{SIMD}
@@ -18,7 +19,7 @@ dedicated to SIMD, might be preserved and restored too
 \uabschnitt{TLS}
 
 \cc is TLS-agnostic - best practice related to TLS applies to \cc too.\\
-As shown in \nameref{mechanism}, \cc does only  preserve and restore
+As shown in \nameref{mechanism}, \cc only preserves and restores
 micro-processor registers at its invocation.
 
 

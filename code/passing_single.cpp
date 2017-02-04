@@ -1,17 +1,17 @@
 int i=1;
-std::continuation c1=
+std::continuation lambda=
     std::callcc( // (a)
-        [](std::continuation && c2){
-            int j=std::transfer_data<int>(c2); // (b)
-            std::cout << "inside ctx1,j==" << j << std::endl;
-            c2=c2(j+1); // (c)
-            return std::move(c2); // (f)
+        [](std::continuation && caller){
+            int j=std::get_data<int>(caller); // (b)
+            std::cout << "inside lambda,j==" << j << std::endl;
+            caller=caller(j+1); // (c)
+            return std::move(caller); // (f)
         },
         i);
-i=std::transfer_data<int>(c1); // (d)
+i=std::get_data<int>(lambda); // (d)
 std::cout << "i==" << i << std::endl;
-c1=c1(); // (e)
+lambda=lambda(); // (e)
 
 output:
-    inside c1,j==1
+    inside lambda,j==1
     i==2

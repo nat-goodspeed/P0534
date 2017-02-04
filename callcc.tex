@@ -2,50 +2,52 @@
 
 \cc (abbreviation of 'call with current continuation') is a universal control
 operator (well-known from languages like Scheme, Ruby, Lisp ...) that captures
-the \currcont (instructions that happen next after \cc returns) as a
+the \currcont (the sequence of instructions after \cc returns) as a
 \bfs{first-class object} and pass it as an argument to a function that is
-executed in the newly created execution context.\\
+executed in a newly-created execution context.\\
 
 \call is the C++ equivalent to \cc, preserving the \bfs{call state} and the
 \bfs{program state} (variables).\\
 
-When \op is called on a continuation object, the existing continuation is
-eliminated and the applied continuation is restored in its place, so that the
-program flow will continue at the point at which the continuation was captured
-and the currnt continuation then becomes the \emph{return value} of the \call
-invocation (see \nameref{mechanism}).\\
+When code running in some \emph{original} context calls \contop on some \cont
+instance \cpp{target}, the \emph{original} context is saved and
+the \cpp{target} continuation is restored in its place, so that program flow
+will continue at the point at which the \cpp{target} continuation was
+originally captured. The captured \emph{original} continuation then becomes
+the \emph{return value} of the \call invocation in \cpp{target}
+(see \nameref{mechanism}).\\
 
-\cont is a \bfs{one-shot continuation} - it can be used only once, is only
+\cont is a \bfs{one-shot continuation}: it can be resumed at most once, is only
 move-constructible and move-assignable.
 \cppf{loop}
 
-The \cpp{std::callcc(foo)} call at (a) captures the \currcont, enters function
-\cpp{foo()} while passing the captured continuation as argument \cpp{c1}.\\
-As long as continuation \cpp{c1} is valid, \cpp{"foo"} is passed to standard
+The \cpp{std::callcc(foo)} call at (a) captures the \currcont, entering function
+\cpp{foo()} while passing the captured continuation as argument \cpp{caller}.\\
+As long as continuation \cpp{caller} is valid, \cpp{"foo"} is passed to standard
 output.\\
-The expression \cpp{c1()} at (b) resumes the original
-continuation represented within \cpp{foo()} by \cpp{c1} and transfers back the
+The expression \cpp{caller()} at (b) resumes the original
+continuation represented within \cpp{foo()} by \cpp{caller} and transfers back the
 control of execution to \cpp{main()}. On return from \cpp{std::callcc(foo)},
-the assignment at (c) sets \cpp{c2} to the \currcont by (b).\\
-The call to \cpp{c2()} at (d) (the \emph{updated} \cpp{c2})
+the assignment at (c) sets \cpp{foo\_ct} to the \currcont as of (b).\\
+The call to \cpp{foo\_ct()} at (d)
 resumes function \cpp{foo}, returning from the \op call at (b) and executing
-the assignment at (e). Here, too, we replace the \cont instance \cpp{c1}
+the assignment at (e). Here we replace the \cont instance \cpp{caller}
 invalidated by the \op call at (b) with the new instance returned by that
 same \op call.\\
-Function \call captures \currcont and enters the given function immediately,
-while \op returns the control back to the continuation passed as argument.\\
+Function \call captures the \currcont and enters the given function immediately,
+while \op returns control back to the continuation saved in \cpp{*this}.\\
 The presented code prints out \cpp{"foo"} and \cpp{"bar"} in a endless loop.\\
 
-In order to transfer data, \call as well as \op accept arguments, that are
-stored on the stack of the \currcont. Function \davail tests if data have been
-passed and with \dget the data can be accessed.
+In order to transfer data, \call as well as \op accept arguments. These are
+stored on the stack of the captured \currcont. Function \davail tests whether data
+have been passed, and with \dget the data can be retrieved.
 \cppf{fibonacci}
 
 The invocation of \call at (a) immediately enters the lambda, passing no data
 but the \currcont. The lambda calculates the fibonacci number using local
 variables \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is
-transferred via \op at (b). The execution control returns and \cpp{c2}
+transferred via \op at (b). The execution control returns; \cpp{lambda} now
 represents the continuation of the lambda. With \dget at (c) the fibonacci
 number is transferred to the current context while at (d) the lambda is entered
-again in order to compute the next fibonacci number (without passing parameter
-to the lambda).
+again in order to compute the next fibonacci number -- without passing any
+parameter to the lambda.
