@@ -12,19 +12,19 @@ Data are passed to another context as additional arguments of \call and
 With functions \davail and \dget the code can test for data and if desired
 retrieve the data.
 \cppf{passing_single}
-The \cpp{callcc()} call at (a) enters the lambda and passes 1 into the
-new context. The value is retrieved as \cpp{j}, as shown by (b). The expression
-\cpp{caller(j+1)} at (c) resumes the original context (represented
+The \cpp{callcc()} call at (0) enters the lambda and passes 1 into the
+new context. The value is retrieved as \cpp{j}, as shown by (1). The expression
+\cpp{caller(j+1)} at (2) resumes the original context (represented
 within the lambda by \cpp{caller}) and transfers back an integer of \cpp{j+1}.
-The assignment at (d) sets \cpp{i} to \cpp{j+1}.\\
-The call to \cpp{lambda()} at (e) (note that no data is passed) resumes the
-lambda, returning from the \cpp{caller(j+1)} call at (c). Here, too,
-we replace the \cont instance \cpp{caller} invalidated by the \op call at (c)
+The assignment at (3) sets \cpp{i} to \cpp{j+1}.\\
+The call to \cpp{lambda()} at (4) (note that no data is passed) resumes the
+lambda, returning from the \cpp{caller(j+1)} call at (2). Here, too,
+we replace the \cont instance \cpp{caller} invalidated by the \op call at (2)
 with the new instance returned by that same \op call.\\
-Finally the lambda returns (the updated) \cpp{caller} at (f), terminating its
+Finally the lambda returns (the updated) \cpp{caller} at (5), terminating its
 context.\\
 Since the updated \cpp{caller} represents the continuation suspended by the call at
-(e), control returns to \main.\\
+(4), control returns to \main.\\
 However, since context \cpp{lambda} has now terminated, the updated \cpp{lambda} is
 invalid. Its \opbool returns \cpp{false}; its \cpp{operator\!()} returns
 \cpp{true}.\\
@@ -35,7 +35,7 @@ libraries. It is not intended to be directly consumed by applications.\\
 Multiple arguments can be transferred into another continuation too.
 \cppf{passing_multiple}
 \cpp{std::get\_data<int,int>(caller)} returns a \cpp{std::tuple<int,int>}
-containing the values passed by the \call call at (a).
+containing the values passed by the \call call at (0).
 
 
 \uabschnitt{main() and thread functions}\label{subsec:main}
@@ -44,8 +44,8 @@ containing the values passed by the \call call at (a).
 That \cont instance is synthesized when the running context suspends, and is
 passed into the newly-resumed context.
 \cppf{simple}
-The \cpp{callcc()} call at (a) enters the lambda. The \cont\ \cpp{caller} at (b)
-represents the execution context of \main. Returning \cpp{caller} at (c) resumes the
+The \cpp{callcc()} call at (0) enters the lambda. The \cont\ \cpp{caller} at (1)
+represents the execution context of \main. Returning \cpp{caller} at (2) resumes the
 original context, switching back to \main.
 
 
@@ -129,12 +129,12 @@ in either of two ways:
 
 \cppf{ontop}
 
-Control passes from (a) to (b) to (c), and so on.\\
-The \cpp{f\_ct(invoke\_ontop\_arg, g, data+1)} call at (i) passes control
+Control passes from (0) to (1) to (2), and so on.\\
+The \cpp{f\_ct(invoke\_ontop\_arg, g, data+1)} call at (8) passes control
 to \cpp{g()} on the continuation of \cpp{f()}.\\
-The \cpp{return} statement at (j) causes the \op call at (g) to return,
-executing the assignment at (k). The \cpp{int} returned by \cpp{g()} is
-accessed at (l).\\
+The \cpp{return} statement at (9) causes the \op call at (6) to return,
+executing the assignment at (10). The \cpp{int} returned by \cpp{g()} is
+accessed at (11).\\
 Finally, \cpp{f()} returns its own \cpp{mc} variable, switching back to the main
 context.
 

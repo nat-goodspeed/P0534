@@ -29,10 +29,10 @@ can be implemented via \cc. \cpp{reset} delimits the continuation and
 \cpp{shift} reifies the continuation, i.e. the code that follows after
 \cpp{shift} returns is passed as a continuation to \cpp{shift}.\\
 
-On entry \cpp{1} is written to \cpp{std::cout} at (a). The \cpp{shift} operator
-at (b) wraps the continuation, that means the code at (c), and passes it as
-argument \cpp{cont} at (b). \cpp{cont()} is called two times, thus (c) is
-executed two times before (d) writes \cpp{2} to \cpp{std::cout}.
+On entry \cpp{1} is written to \cpp{std::cout} at (0). The \cpp{shift} operator
+at (1) wraps the continuation, that means the code at (2), and passes it as
+argument \cpp{cont} at (1). \cpp{cont()} is called two times, thus (2) is
+executed two times before (3) writes \cpp{2} to \cpp{std::cout}.
 \cppf{delimited}
 
 
