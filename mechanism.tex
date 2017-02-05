@@ -1,37 +1,40 @@
 \abschnitt{The switch mechanism}\label{mechanism}
 
-Modern \bfs{micro-processors} are \bfs{registers machines}; the content of
-processor registers represent a execution context of the program at a given
+Modern \bfs{micro-processors} are \bfs{register machines}; the content of
+processor registers represent the execution context of the program at a given
 point in time.\\
 \bfs{Operating systems} simulate parallel execution of programs on a single
 processor by switching between programs (\bfs{context switch}) by
 \bfs{preserving} and \bfs{restoring} the content of \bfs{all registers}.\\
 
-For \cc not all registers have to be preserved because the calling convention,
-part of the ABI, that covers how function's arguments and return values are
-passed, determines which subset of micro-processor registers have to be
+For \cc, not all registers need be preserved because the context switch is
+effected by a visible function call. It need not be undetectable like an
+operating-system context switch; it only needs to be as transparent as a call
+to any other function. The calling convention -- the
+part of the ABI that specifies how a function's arguments and return values are
+passed -- determines which subset of micro-processor registers must be
 preserved by the called subroutine.\\
 
-As a consequence a continuation preserves the execution context, e.g. state of
+As a consequence a continuation preserves the execution context, i.e. state of
 the register machine (including the stack as well as the instruction pointer).\\
 
 The \bfs{calling convention}\cite{SYSVABI} of \bfs{SYSV ABI} for \bfs{x86\_64}
 architecture determines that general purpose registers R12, R13, R14, R15, RBX
-and RBP have to be preserved by the sub-routine - the first arguments are passed
+and RBP must be preserved by the sub-routine - the first arguments are passed
 to functions via RDI, RSI, RDX, RCX, R8 and R9 and return values are stored in
 RAX, RDX.\\
 
 \asmfn{jump_x86_64.S}
 
-The code fragment, taken from boost.context\cite{bcontext}, shows how the
+The code fragment above, taken from boost.context\cite{bcontext}, shows how the
 context switch might be implemented for \bfs{SYSV ABI}/\bfs{x86\_64}.\\
-Line (1) prepares the stack of the current context to hold the content of
-registers R12-R15, RBX ad RBP. The address of the stack pointer is preserved in
-register RAX at line (10) for further use.\\
-The \bfs{return address}, e.g. the address of the instruction that has to be
+Line (1) reserves space on the stack of the current context to hold the content of
+registers R12-R15, RBX and RBP. The address of the stack pointer is preserved in
+register RAX at line (10) for later use.\\
+The \bfs{return address}, i.e. the address of the instruction that will be
 executed after this function returns, is left on the stack. Other architectures
-store the return address in a special register (link register) instead on the
-stack. In this case the link register must be preserved too.\\
+store the return address in a special register (link register) instead of the
+stack; in that case the link register must be preserved too.\\
 At line (12) the stack pointer gets assigned to the address of the
 continuation that has to be resumed - in fact, the continuation represents a
 stack address (the stack pointer was passed in RDI as first argument).\\
@@ -42,9 +45,10 @@ restored at lines (16) - (21).\\
 The stack address, preserved in RAX at line (10), of the
 \bfs{suspended continuation} is \bfs{returned} as a \bfs{one-shot continuation}.\\
 
-In fact, \cc is an extended function call; while some \bfs{general purpose
-registers}, defined by the calling convention, are preserved, additionally the
+In fact, \cc is an extended function call. The \bfs{general purpose
+registers} specified by the calling convention are preserved. In addition, the
 \bfs{stack pointer} and \bfs{instruction pointer} are preserved and exchanged
-too - for code that invokes \cc it behaves like an ordinary function call.\\
-In other words, \cc acts on the level of simple function invokation - with the
-same performance characteristics (view CPU cycles).
+too -- thus, from the point of view of calling code, \cc behaves like an
+ordinary function call.\\
+In other words, \cc acts on the level of a simple function invocation -- with the
+same performance characteristics (in terms of CPU cycles).

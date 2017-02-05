@@ -12,19 +12,19 @@ incoming I/O events, certain asynchronous I/O sequences are logically
 sequential, and for those the written and maintained code can look and act
 sequential while using continuations.\\
 
-C and C++ already use continuations - if a routine calls a sub-routine, then a
-(hidden) continuation (the remaining steps after the sub-routine call) is
+C and C++ already use implicit continuations: if a routine calls a sub-routine,
+then a (hidden) continuation (the remaining steps after the sub-routine call) is
 created. This continuation is resumed when the sub-routine returns. For
 instance the x86 architecture stores the (hidden) continuation as return address
 on the stack\footnote{Other (RISC) architectures use a special micro-processor
-regsiter for this purpose.}.\\
+register for this purpose.}.\\
 
 Continuations exposed as \bfs{first-class continuations} can be passed to and
 returned from functions, assigned to variables or stored into containers. With
-first-class continuations a language can \bfs{control the flow of execution}
-via suspending and resuming continuations explicitly (enabling to jump into a
-function on exact the point were it has been exited previously).\\
-Making the program state visible via a first-class continuations is known as
+first-class continuations, a language can explicitly \bfs{control the flow of
+execution} via suspending and resuming continuations, enabling control to pass
+into a function at exactly the point where it previously suspended.\\
+Making the program state visible via first-class continuations is known as
 \bfs{reification}.\\
 
 The continuation of the computation step derived from the current point in a
@@ -35,17 +35,20 @@ program's execution is called the \bfs{current continuation}. \cc captures the
 Continuations that can be called multiple times are named
 \bfs{full continuations}.\\
 \bfs{One-shot continuations} can only resumed once (a resumed 
-\bfs{one-shot continuation} becomes invalidated); the control is transferred to
-a execution context where the continuation is no longer in scope.\\
+\bfs{one-shot continuation} becomes invalidated); control is transferred to
+an execution context where the continuation is no longer in scope.\\
 Class \cpp{std::execution_context<>}, proposed in \bfs{P0099R1}\cite{P0099R1}
 already represents a \bfs{one-shot-continuation}.\\
 \bfs{Full continuations} are \bfs{not} considered in this proposal because of
-their, in C++ problematic, nature.  Full continuations would require copies of
-the stack (including the variables) as well as violates C++'s RAII pattern.\\
+their nature, problematic in C++. Full continuations would require copies of
+the stack (including the variables), which would violate C++'s RAII pattern.\\
 
 In contrast to \cc that captures the \bfs{entire remaining} continuation, the
 operators \shift and \reset create a so called \bfs{delimited continuation}. A
 delimited continuation represents a slice of the program context. Operator
-\reset delimits the continuation, e.g. it determines where the continuation
+\reset delimits the continuation, i.e. it determines where the continuation
 starts and ends, while \shift \bfs{reifies} the continuation.\\
-\bfs{Delimited continuations} are \bfs{not part} of this proposal.
+\bfs{Delimited continuations} are \bfs{not part} of this proposal. However,
+delimited continuation functionality can be built on \cc, as shown in
+\nameref{delimited}.
+

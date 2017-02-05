@@ -1,20 +1,20 @@
-std::continuation c2=
-    std::callcc(  // (a)
-        [](std::continuation && c1){
+std::continuation lambda=
+    std::callcc(  // (0)
+        [](std::continuation && caller){
             int a=0;
             int b=1;
             for(;;){
-                c1=c1(a); // (b)
+                caller=caller(0); // (1)
                 int next=a+b;
                 a=b;
                 b=next;
             }
-            return std::move(c1);
+            return std::move(caller);
         });
 for (int j=0;j<10;++j) {
-    int i=std::transfer_data<int>(c2); // (c)
+    int i=std::get_data<int>(lambda); // (2)
     std::cout << i << " ";
-    c2=c2(); // (d)
+    lambda=lambda(); // (3)
 }
 
 output:

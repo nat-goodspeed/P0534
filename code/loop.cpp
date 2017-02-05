@@ -1,18 +1,18 @@
-std::continuation foo(std::continuation && c1) {
-    while (c1) {
+std::continuation foo(std::continuation && caller) {
+    while (caller) {
         std::cout << "foo\n";
-        c1= // (e)
-           c1(); // (b)
+        caller= // (4)
+           caller(); // (1)
     }
-    return std::move(c1);
+    return std::move(caller);
 }
 
-std::continuation c2= // (c)
-                     std::callcc(foo); // (a)
-while (c2) {
+std::continuation foo_ct= // (2)
+                     std::callcc(foo); // (0)
+while (foo_ct) {
     std::cout << "bar\n";
-    c2= // (f)
-       c2(); // (d)
+    foo_ct= // (5)
+       foo_ct(); // (3)
 }
 
 output:

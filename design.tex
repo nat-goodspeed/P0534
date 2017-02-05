@@ -1,9 +1,8 @@
 \abschnitt{Design}\label{design}
 
-Because \cont represents a continuation (it \bfs{contains} only its
-\bfs{stack pointer} as member variable) it is proposed as a
-\bfs{pure data structure} (no behaviour exposed via member functions,
-only status queries).
+Because \cont \bfs{contains} only its
+\bfs{stack pointer} as a member variable, it is proposed as a
+\bfs{pure data structure}.
 
 
 \uabschnitt{Passing data}\label{subsec:data}
@@ -11,22 +10,22 @@ only status queries).
 Data are passed to another context as additional arguments of \call and
 \op.\\
 With functions \davail and \dget the code can test for data and if desired
-transfer the data.
+retrieve the data.
 \cppf{passing_single}
-The \cpp{callcc()} call at (a) enters the lambda and passes \cpp{j=1} into the
-new context. The value is transferred as shown by (b). The expression
-\cpp{callcc(c2,j+1)} at (c) resumes the original context (represented
-within the lambda by \cpp{c2}) and transfers back an integer of \cpp{j+1}.
-The assignment at (d) sets \cpp{i} to \cpp{j+1}.\\
-The call to \cpp{callcc(c1)} (note that no data is passsed) at (e) resumes the
-\cpp{c1} lambda, returning from the \cpp{callcc(c2,j+1)} call at (c). Here, too,
-we replace the \cont instance \cpp{c2} invalidated by the \op call at (c)
+The \cpp{callcc()} call at (0) enters the lambda and passes 1 into the
+new context. The value is retrieved as \cpp{j}, as shown by (1). The expression
+\cpp{caller(j+1)} at (2) resumes the original context (represented
+within the lambda by \cpp{caller}) and transfers back an integer of \cpp{j+1}.
+The assignment at (3) sets \cpp{i} to \cpp{j+1}.\\
+The call to \cpp{lambda()} at (4) (note that no data is passed) resumes the
+lambda, returning from the \cpp{caller(j+1)} call at (2). Here, too,
+we replace the \cont instance \cpp{caller} invalidated by the \op call at (2)
 with the new instance returned by that same \op call.\\
-Finally the lambda returns (the updated) \cpp{c2} at (f), terminating its
+Finally the lambda returns (the updated) \cpp{caller} at (5), terminating its
 context.\\
-Since the updated \cpp{c2} represents the continuation suspended by the call at
-(e), control returns to \main.\\
-However, since context \cpp{c1} has now terminated, the updated \cpp{c1} is
+Since the updated \cpp{caller} represents the continuation suspended by the call at
+(4), control returns to \main.\\
+However, since context \cpp{lambda} has now terminated, the updated \cpp{lambda} is
 invalid. Its \opbool returns \cpp{false}; its \cpp{operator\!()} returns
 \cpp{true}.\\
 It may seem tricky to keep track of which \cont instance is currently valid,
@@ -35,19 +34,19 @@ facility is intended as a high-performance foundation for higher-level
 libraries. It is not intended to be directly consumed by applications.\\
 Multiple arguments can be transferred into another continuation too.
 \cppf{passing_multiple}
-\call takes the parameters \cpp{i} and \cpp{j} that are returned from \dget
-as \cpp{std::tuple} of \cpp{int}.
+\cpp{std::get\_data<int,int>(caller)} returns a \cpp{std::tuple<int,int>}
+containing the values passed by the \call call at (0).
 
 
 \uabschnitt{main() and thread functions}\label{subsec:main}
 
 \main as well as the \entryfn of a thread can be represented by a continuation.
 That \cont instance is synthesized when the running context suspends, and is
-passed into the newly-resumed continuation.
+passed into the newly-resumed context.
 \cppf{simple}
-The \cpp{callcc()} call at (a) enters the lambda. The \cont\ \cpp{c2} at (b)
-represents the execution context of \main. Returning \cpp{c2} at (c) resumes the
-original context (switch back to \main).
+The \cpp{callcc()} call at (0) enters the lambda. The \cont\ \cpp{caller} at (1)
+represents the execution context of \main. Returning \cpp{caller} at (2) resumes the
+original context, switching back to \main.
 
 
 \uabschnitt{\cc and std::thread}
@@ -57,8 +56,8 @@ since the operating system is responsible for the stack allocated for \main,
 as well as each \cpp{std::thread}, you must not attempt to resume a \cont
 instance representing any such context on any thread other
 than its own. \cpp{any\_thread()} tests for this.\\
-If \cpp{std::any\_thread()} returns \cpp{false}, it is
-only valid to resume that \cont instance on the thread on which it was initially
+If, for \cont\ \cpp{c}, \cpp{std::any\_thread(c)} returns \cpp{false}, it is
+only valid to resume \cpp{c} on the thread on which it was initially
 launched.
 
 
@@ -69,8 +68,8 @@ indicated by the returned \cont instance.\\
 Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
 undefined behavior.\\
 If the \entryfn returns the same \cont instance it was originally
-passed (or rather, the most recently updated instance returned from the
-previous instance's \call or \op), control returns to the context that most
+passed (or rather, the most recently updated instance returned from \call or the
+previous instance's \op), control returns to the context that most
 recently resumed the running callable. However, the callable may return (switch
 to) any reachable valid \cont instance.
 
@@ -91,9 +90,11 @@ exception) on top of a continuation. For this purpose you may pass to\\
   \item any additional arguments.
 \end{itemize}
 
-The function passed in this case must accept a reference of \cont (in order to
-pass the continuation in a thrown exception - otherwise the continuation gets
-deallocated).\\
+Like an \entryfn passed to \call, the function passed in this case must
+accept an rvalue reference to \cont. However, instead of necessarily returning
+a \cont, it may return a single type or a \cpp{std::tuple}. Whatever value(s)
+it returns will become available to the context referenced by \cpp{*this} as
+the data tested by \davail and retrieved by \dget.\\
 
 Suppose that code running on the program's main context calls \cpp{callcc(f)},
 thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
@@ -101,9 +102,9 @@ and passed into \cpp{f()}.\\
 Suppose further that after doing some work, \cpp{f()} calls \cpp{mc()},
 thereby switching context back to the main context. \cpp{f()} remains suspended
 in the call to \cpp{mc()}.\\
-At this point the main context calls \cpp{fc(invoke\_ontop\_arg, g);}
+At this point the main context calls \cpp{f\_ct(invoke\_ontop\_arg, g);}
 where \cpp{g()} is declared as\\
-\cpp{void g(continuation &&);} \cpp{g()} is entered in the context of \cpp{f()}.
+\cpp{int g(continuation &&);} \cpp{g()} is entered in the context of \cpp{f()}.
 It is as if \cpp{f()}'s call to \cpp{mc()} directly called \cpp{g()}.\\
 Function \cpp{g()} has the same range of possibilities as any function called on
 \cpp{f()}'s context. Its special invocation only matters when control leaves it
@@ -114,20 +115,27 @@ in either of two ways:
         stack entries in that context (such as \cpp{f()}'s) as well, back to a
         matching \cpp{catch} clause.\footnote{As stated in \nameref{subsec:exceptions},
         if there is no matching \cpp{catch} clause in that context,
-        \cpp{std::terminate()} is called.}
-  \item If \cpp{g()} returns, its return value becomes the value returned by
+        \cpp{std::terminate()} is called.}\footnote{There are only two ways to
+        terminate a given context without terminating the whole process. One
+        is to switch to some context that will destroy the continuation passed
+        (or returned) to it. The other is to return a valid continuation from
+        the \entryfn. If an \cpp{invoke\_ontop\_arg} function throws an
+        exception, it is good practice to bind into the exception object
+        the continuation passed into the \cpp{invoke\_ontop\_arg} function so that
+        a \cpp{catch} clause in the \entryfn can return that continuation.}
+  \item If \cpp{g()} returns, its return value provides data for
         \cpp{f()}'s suspended \cpp{mc()} call.
 \end{enumerate}
 
 \cppf{ontop}
 
-Control passes from (a) to (b) to (c), and so on.\\
-The \cpp{c(invoke\_ontop\_arg, f2, data+1)} call at (i) passes control
-to \cpp{f2()} on the continuation of \cpp{f1()}.\\
-The \cpp{return} statement at (j) causes the \op call at (g) to return,
-executing the assignment at (k). The \cpp{int} returned by \cpp{f2()} is
-accessed at (l).\\
-Finally, \cpp{f1()} returns its own \cpp{c} variable, switching back to the main
+Control passes from (0) to (1) to (2), and so on.\\
+The \cpp{f\_ct(invoke\_ontop\_arg, g, data+1)} call at (8) passes control
+to \cpp{g()} on the context of \cpp{f()}.\\
+The \cpp{return} statement at (9) causes the \op call at (6) to return,
+executing the assignment at (10). The \cpp{int} returned by \cpp{g()} is
+accessed at (11).\\
+Finally, \cpp{f()} returns its own \cpp{mc} variable, switching back to the main
 context.
 
 
@@ -175,7 +183,7 @@ Possible types of stack allocators:
         initial size, which grows on demand.
 \end{itemize}
 
-
+\newpage
 \uabschnitt{std::continuation}
 declaration of class \cont
 \cppf{cont}
@@ -223,7 +231,16 @@ destroys a continuation\\
               execution is destroyed too. Specifically, the stack is unwound. As
               noted in \nameref{subsec:destruction}, an implementation is free to
               unwind the stack either by throwing an exception or by
-              intrinsics not requiring \cpp{throw}.
+              intrinsics not requiring \cpp{throw}.\footnote{If the
+              implementation unwinds the stack by throwing an exception, it
+              should throw an exception with a conventional name,
+              e.g. \cpp{std::unwind}. In a program in which exceptions are
+              thrown, it is prudent to code a context's \entryfn with a
+              last-ditch \cpp{catch (...)} clause: in general, exceptions must
+              \emph{not} leak out of the \entryfn. However, if the
+              implementation's stack unwinding is implemented by throwing an
+              exception, a correct \entryfn\ \cpp{try} statement
+              must \cpp{catch (std::unwind const&)} and rethrow it.}
 \end{description}
 
 \subparagraph*{operator=}
@@ -297,7 +314,7 @@ resumes a continuation\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
+    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn\ 
               \cpp{fn}\\
 \end{description}
 
@@ -306,7 +323,7 @@ resumes a continuation\\
     \item[1)] \cpp{*this} represents a context of execution (\opbool returns
                \cpp{true})
     \item[2)] \cpp{any\_thread(*this)} returns \cpp{true}, or the running thread is
-              the same thread on which \cpp{c} ran previously.
+              the same thread on which \cpp{*this} ran previously.
 \end{description}
 
 {\bfseries Postcondition}
@@ -332,9 +349,9 @@ Because \op invalidates the instance on which it is called, \emph{no valid
 \cont instance ever represents the currently-running context.}
 \newline
 When calling \op, it is conventional to replace the newly-invalidated
-instance -- the instance passed to \op -- with the new instance
+instance -- the instance on which \op was called -- with the new instance
 returned by that \op call. This helps to avoid inadvertent calls to \op
-with the old, invalidated instance.
+on the old, invalidated instance.
 
 \subparagraph*{operator bool}
 test whether continuation is valid\\
@@ -456,8 +473,9 @@ swaps two \cont instances\\
 
 \uabschnitt{std::callcc()}
 
-create and enter a new context while the current execution context is wrapped
-into a continuation and passed as argument to the new context\\
+create and enter a new context, capturing the current execution context (the
+{\bfseries current continuation}) in a \cont and passing it to the
+specified \entryfn.\\
 
 \begin{tabular}{ l l }
     \midrule
@@ -497,13 +515,13 @@ into a continuation and passed as argument to the new context\\
 {\bfseries Return value}
 \begin{description}
     \item[continuation] the returned instance represents the execution context
-                        (continuation) that has been suspended in order to
+                        (continuation) that was suspended in order to
                         resume the current context
 \end{description}
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn
+    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn\ 
               \cpp{fn}\\
 \end{description}
 
@@ -517,8 +535,8 @@ A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.\\
 On return \cpp{fn} has to specify a \cont to which the execution control is
 transferred.\\
-If an instance with valid state goes out of scope and the \cpp{fn} has not yet
-returned, the stack is traversed  and continuation's stack is deallocated.
+If an instance with valid state goes out of scope and its \cpp{fn} has not yet
+returned, the stack is unwound and deallocated.
 
 
 \uabschnitt{std::data\_available()}

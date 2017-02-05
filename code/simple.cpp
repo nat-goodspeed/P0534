@@ -1,8 +1,8 @@
 int main() {
-    std::continuation c1=
-        std::callcc( // (a)
-            [](std::continuation && c2){ // (b)
-                return std::move(c2); // (c)
+    std::continuation lambda=
+        std::callcc( // (0)
+            [](std::continuation && caller){ // (1)
+                return std::move(caller); // (2)
             });
     return 0;
 }

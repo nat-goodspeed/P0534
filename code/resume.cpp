@@ -1,10 +1,10 @@
 bool data_available( continuation const& c) noexcept;
 
 template< typename Arg >
-typename Arg transfer_data( continuation & c);
+typename Arg get_data( continuation & c);
 
 template< typename ... Arg >
-typename std::tuple< Arg ... > transfer_data( continuation & c);
+typename std::tuple< Arg ... > get_data( continuation & c);
 
 template< typename Fn, typename ... Arg >
 continuation callcc( Fn && fn, Arg ... arg);
