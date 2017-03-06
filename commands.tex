@@ -17,18 +17,6 @@
 \newcommand{\graphc}[1]{\begin{center}\graph{#1}\end{center}}
 \newcommand{\bfs}[1]{{\bfseries #1}}
 
-\lstdefinelanguage
-   [arm]{Assembler}                     % add a "arm" dialect of Assembler
-   {morekeywords={}}    % with these extra keywords:
-\lstset{
-        language=[arm]Assembler,
-        numbers=none,
-        numberstyle=\tiny,
-        numberblanklines=false,
-        stepnumber=1,
-        numbersep=10pt
-}
-
 \newcommand{\cpp}[1]{{\lstinline[
 		basicstyle=\ttfamily\small\color{black},
         breakatwhitespace=true,
@@ -58,46 +46,13 @@
         stringstyle=\ttfamily\color{red}
 ] {code/#1.cpp}}
 
-
-\newcommand{\asm}[1]{
-    \lstinline[
-        basicstyle=\ttfamily\color{black},
-        keywordstyle=\color{blue},
-        commentstyle=\color{green},
-        stringstyle=\color{red}
-    ] {#1}
-}
-\newcommand{\asmf}[1]{
-    \lstinputlisting[
-        basicstyle=\ttfamily\color{black},
-        keywordstyle=\color{blue},
-        commentstyle=\color{green},
-        stringstyle=\color{red}
-    ] {code/#1}
-}
-\newcommand{\asmfn}[1]{
-    \lstinputlisting[
-        numbers=left,
-        basicstyle=\ttfamily\color{black},
-        keywordstyle=\color{blue},
-        commentstyle=\color{green},
-        stringstyle=\color{red}
-    ] {code/#1}
-}
-
-\newcommand{\call}{\cpp{std::callcc()}\xspace}
-\newcommand{\op}{\cpp{operator()}\xspace}
-\newcommand{\contop}{\cpp{std::continuation::operator()}}
+\newcommand{\callcc}{\cpp{std::callcc()}\xspace}
+\newcommand{\resume}{\cpp{resume()}\xspace}
+\newcommand{\resumewith}{\cpp{resume\_with()}}
+\newcommand{\getdata}{\cpp{get\_data()}\xspace}
+\newcommand{\dataavail}{\cpp{data\_available()}\xspace}
 \newcommand{\cont}{\cpp{std::continuation}\xspace}
-\newcommand{\ectx}{\cpp{std::execution\_context<>}\xspace}
-\newcommand{\main}{\cpp{main()}\xspace}
-\newcommand{\shift}{\cpp{shift}\xspace}
-\newcommand{\reset}{\cpp{reset}\xspace}
-\newcommand{\davail}{\cpp{data\_available()}\xspace}
-\newcommand{\dget}{\cpp{get\_data()}\xspace}
-\newcommand{\opbool}{\cpp{operator bool()}}
 
-\newcommand{\callcc}{\bfs{call-with-current-continuation}\xspace}
 \newcommand{\cc}{\bfs{call/cc}\xspace}
 \newcommand{\entryfn}{\emph{entry-function}\xspace}
 \newcommand{\currcont}{\bfs{current continuation}\xspace}

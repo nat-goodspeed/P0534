@@ -41,7 +41,7 @@
 \begin{document}
 \small
 \begin{tabbing}
-    Document number: \= P0534R0\\
+    Document number: \= P0534R1\\
     Date:            \> 2017-02-04\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
     Audience:        \> SG1/LEWG\\
@@ -55,31 +55,16 @@
 
 %//////////////////////////////////////////////////////////////////////////////
 
-\paragraph*{Abstract}
-This document \bfs{supersedes P0099R1\cite{P0099R1}} and proposes a C++
-equivalent to the well-known concept \callcc (abbreviation \cc).\\
-In fact, P0099R1's \ectx already represents a \bfs{one-shot continuation},
-reminiscent of Scheme's\cite{schemecallcc} and Ruby's\cite{rubycallcc} \cc.
-From this point of view the proposed API is an \bfs{advancement} of \ectx. The
-benefits are:
+\paragraph*{Revision History}
+This document supersedes P0534R1.\\
+\newline
+Changes since P0534R1:
+
 \begin{itemize}
-    \item   use of established, well-known concept
-    \item   no name clashes with \emph{execution-context} in
-            executor and network proposals
-    \item   relaxed constraints in the transfer of data
-    \item   eliminating false usage
-    \item   working implementation with boost.context\cite{bcontext}
+    \item modified API
 \end{itemize}
 
-\input{motivation}
-\input{continuations}
-\input{callcc}
-\input{mechanism}
-\input{design}
-\input{usecases}
-\input{notes}
-\input{appendix_a}
-\input{appendix_b}
+\input{api}
 
 %//////////////////////////////////////////////////////////////////////////////
 
