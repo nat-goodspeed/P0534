@@ -6,9 +6,11 @@ became member-functions of \cont. Additionally \cpp{operator(arg...)} and
 \resumewith.\\
 \newline
 Keeping \callcc as free-function is preferred because \cont represents a
-continuation (a rest of a computation). In this context \callcc acts as a
-factory-method, it creates and resumes a new execution context (stack etc.)
-and if this execution context is suspended \callcc returns a continuation that
-represents the rest of the computation.\\
+continuation \footnote{A continuation is an abstract concept that represents the
+context state at a given point during the execution of a program (for more
+details see P0534R0, section \emph{Continuation}\cite{P0534R0})}.
+In this context \callcc acts as a factory-method, it creates and resumes a new
+execution context (stack etc.) and if this execution context is suspended
+\callcc returns a continuation that represents the rest of the computation.\\
 The rest of the API remains a proposed in P0534R0\cite{P0534R0}.
 \cppf{continuation}

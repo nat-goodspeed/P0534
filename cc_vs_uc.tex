@@ -1,0 +1,39 @@
+\abschnitt{Why \cc is preferred over \uc}
+
+\uabschnitt{stack represents the continuation}
+
+In contrast to \uc, \cc uses the stack as storage for the suspended
+execution context (the content of the registers, see P0534R0\cite{P0534R0}).
+
+\begin{itemize}
+    \item only the target has to be provided at resumption
+        (\cpp{swap\_ucontext()} required source and target)
+    \item current execution context is already represented by the
+        stack to which the stack-pointer points to
+    \item suspended execution context is passed as continuation (parameter) 
+        to the resumed execution context
+    \item no need for a global pointer that points to the current execution context
+    \item \main and thread's \entryfn do fit seamlessly into the concept of \cc
+        because the stack of \main or thread already represents the continuation of \main
+        and thread
+\end{itemize}
+
+\uabschnitt{aggregation of stack address}
+
+A instance of \cont aggregates the stack address of a suspended execution
+- \cont:
+
+\begin{itemize}
+    \item represents the continuation of an suspended context
+    \item prevents accidentaly copying the stack
+    \item prevents accidentaly resuming an already resumed/running execution
+        context
+    \item prevents accidentaly resuming an execution context that has already
+        terminated (compuation has already been finished)
+    \item manages lifespan of an explictly-allocated stack, the stack gets
+        deallocated if \cont goes out of scope
+    \item context switch and data transfer via one function call
+\end{itemize}
+
+Ofcourse a \uc-like API would be possible but it would be unsafe and error
+prone.
