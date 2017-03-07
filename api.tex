@@ -5,12 +5,16 @@ became member-functions of \cont. Additionally \cpp{operator(arg...)} and
 \cpp{operator(invoke_ontop_arg,arg...)} have been renamed to \resume and
 \resumewith.\\
 \newline
-Keeping \callcc as free-function is preferred because \cont represents a
-continuation \footnote{A continuation is an abstract concept that represents the
-context state at a given point during the execution of a program (for more
-details see P0534R0, section \emph{Continuation}\cite{P0534R0})}.
-In this context \callcc acts as a factory-method, it creates and resumes a new
-execution context (stack etc.) and if this execution context is suspended
-\callcc returns a continuation that represents the rest of the computation.\\
-The rest of the API remains a proposed in P0534R0\cite{P0534R0}.
+\callcc acts as a factory-method, it creates and starts a new execution context
+(stack etc.) and returns a continuation that represents the rest of execution
+context's computation \footnote{A continuation is an abstract concept that
+represents the context state at a given point during the execution of a program
+(for more details see P0534R0, section \emph{Continuation}\cite{P0534R0})}.\\
+Additionally, \callcc express' explicitly the creation of a new execution
+context and the switch to the other execution path.\\
+\newline
+Class \cpp{unwind\_exception} is used for unwinding and deallocating the stack
+at continuation's destruction.\\
+\newline
+The rest of the API remains as proposed in P0534R0\cite{P0534R0}.
 \cppf{continuation}
