@@ -22,7 +22,5 @@ remains already on the stack. On some RISC-architectures the link-register
 has to be preserved on the stack while the context is suspended and is loaded
 into the instruction-pointer on resumption.} between proloque and epiloque.\\
 The prologue and epilogue of \resume and \resumewith neither consume stack space
-nor do they call sub-routines, only the stack-pointer is exchanged.\\
-\newline
-On modern architectures \callcc takes view CPU cycles (6-8 CPU cycles on Intel E5 2620).
+nor do they call sub-routines, only the stack-pointer is exchanged.
 \cppf{implementation}
