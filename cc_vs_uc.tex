@@ -1,4 +1,4 @@
-\abschnitt{Why \cc is preferred over \uc}
+\abschnitt{Why \cc should be preferred over \uc or \lj}
 
 \uabschnitt{stack represents the continuation}
 
@@ -13,6 +13,7 @@ execution context (the content of the registers, see P0534R0\cite{P0534R0}).
     \item suspended execution context is passed as continuation (parameter) 
         to the resumed execution context
     \item no need for a global pointer that points to the current execution context
+    \item data are trasnferred through a function call, no need for a global pointer
     \item \main and thread's \entryfn do fit seamlessly into the concept of \cc
         because the stack of \main or thread already represents the continuation of \main
         and thread
@@ -37,3 +38,37 @@ A instance of \cont aggregates the stack address of a suspended execution
 
 Ofcourse a \uc-like API would be possible but it would be unsafe and error
 prone.
+
+\uabschnitt{Disadvantages of \uc}
+
+\begin{itemize}
+    \item deprecated since POSIX.1-2004d and removed in POSIX.1-2008
+    \item \cpp{makecontext} violates C99 standard (function pointer cast and integer arguments)
+    \item \cpp{makecontext} iarguments in var-arg list are required to beintegers, passing pointes
+        is not guaranteed to work (especially on platforms where pointers are larger than integers)
+    \item \cpp{swapcontext} does call into the kernel consuming a lot of CPU cycles (two magnitures
+        of order)
+    \item does not prevent accidentaly copying the stack
+    \item does not prevent accidentaly resuming an already resumed/running execution
+        context
+    \item does not prevent accidentaly resuming an execution context that has already
+        terminated (compuation has already been finished)
+    \item does not manage lifespan of an explictly-allocated stack
+    \item context switch (\cpp{swapcotnext}) does not transfer data (requires global pointer)
+\end{itemize}
+
+\uabschnitt{Disadvantages of \lj}
+
+\begin{itemize}
+    \item C99 defines \sj / \lj for non-local jumps
+    \item \lj is not required to preserve the current stack frame, therefore jumping into a functions
+        which has exited (by return or by a different \lj higher up the stack), the behavior is undefined
+        (only long jumps up the call stack are allowed).
+    \item does not prevent accidentaly copying the stack
+    \item does not prevent accidentaly resuming an already resumed/running execution
+        context
+    \item does not prevent accidentaly resuming an execution context that has already
+        terminated (compuation has already been finished)
+    \item does not manage lifespan of an explictly-allocated stack
+    \item context switch (\lj) does not transfer data (requires global pointer)
+\end{itemize}
