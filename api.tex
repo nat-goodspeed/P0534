@@ -1,20 +1,20 @@
 \abschnitt{Changed API}
 
-As requested at the C++ meeting in Kona; free-functions \getdata and \dataavail
+As requested at the C++ meeting in Kona, free-functions \getdata and \dataavail
 became member-functions of \cont. Additionally \cpp{operator(arg...)} and
 \cpp{operator(invoke_ontop_arg,arg...)} have been renamed to \resume and
 \resumewith.\\
 \newline
-\callcc acts as a factory-method, it creates and starts a new execution context
-(stack etc.) and returns a continuation that represents the rest of execution
-context's computation \footnote{A continuation is an abstract concept that
+\callcc acts as a factory-function: it creates and starts a new execution context
+(stack etc.) and returns a continuation that represents the rest of the execution
+context's computation.\footnote{A continuation is an abstract concept that
 represents the context state at a given point during the execution of a program
-(for more details see P0534R0, section \emph{Continuation}\cite{P0534R0})}.\\
-Additionally, \callcc express' explicitly the creation of a new execution
+(for more details see P0534R0, section \emph{Continuation}\cite{P0534R0})}\\
+\callcc explicitly expresses the creation of a new execution
 context and the switch to the other execution path.\\
 \newline
 Class \cpp{unwind\_exception} is used for unwinding and deallocating the stack
-at continuation's destruction.\\
+at the continuation's destruction.\\
 \newline
 The rest of the API remains as proposed in P0534R0\cite{P0534R0}.
 \cppf{continuation}

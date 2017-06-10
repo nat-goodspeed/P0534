@@ -9,66 +9,66 @@ execution context (the content of the registers, see P0534R0\cite{P0534R0}).
     \item only the target has to be provided at resumption
         (\cpp{swap\_ucontext()} required source and target)
     \item current execution context is already represented by the
-        stack to which the stack-pointer points to
+        stack to which the stack-pointer points
     \item suspended execution context is passed as continuation (parameter) 
         to the resumed execution context
     \item no need for a global pointer that points to the current execution context
-    \item data are trasnferred through a function call, no need for a global pointer
-    \item \main and thread's \entryfn do fit seamlessly into the concept of \cc
-        because the stack of \main or thread already represents the continuation of \main
-        and thread
+    \item data are transferred through a function call, no need for a global pointer
+    \item \main and each thread's \entryfn fit seamlessly into the concept of \cc
+        because the stack of \main, or the thread, already represents the continuation of
+        that context
 \end{itemize}
 
 \uabschnitt{aggregation of stack address}
 
-A instance of \cont aggregates the stack address of a suspended execution
-- \cont:
+A instance of \cont contains the stack address of a suspended execution.
+\cont:
 
 \begin{itemize}
-    \item represents the continuation of an suspended context
-    \item prevents accidentaly copying the stack
-    \item prevents accidentaly resuming an already resumed/running execution
+    \item represents the continuation of a suspended context
+    \item prevents accidentally copying the stack
+    \item prevents accidentally resuming the running execution
         context
-    \item prevents accidentaly resuming an execution context that has already
-        terminated (compuation has already been finished)
-    \item manages lifespan of an explictly-allocated stack, the stack gets
-        deallocated if \cont goes out of scope
+    \item prevents accidentally resuming an execution context that has already
+        terminated (computation has finished)
+    \item manages lifespan of an explicitly-allocated stack: the stack gets
+        deallocated when \cont goes out of scope
     \item context switch and data transfer via one function call
 \end{itemize}
 
-Ofcourse a \uc-like API would be possible but it would be unsafe and error
-prone.
+Of course a \uc-like standard API would be possible, but in C++ we can do much
+better with very little abstraction cost.
 
 \uabschnitt{Disadvantages of \uc}
 
 \begin{itemize}
     \item deprecated since POSIX.1-2004d and removed in POSIX.1-2008
     \item \cpp{makecontext} violates C99 standard (function pointer cast and integer arguments)
-    \item \cpp{makecontext} iarguments in var-arg list are required to beintegers, passing pointes
+    \item \cpp{makecontext} arguments in var-arg list are required to be integers; passing pointers
         is not guaranteed to work (especially on platforms where pointers are larger than integers)
-    \item \cpp{swapcontext} does call into the kernel consuming a lot of CPU cycles (two magnitures
-        of order)
-    \item does not prevent accidentaly copying the stack
-    \item does not prevent accidentaly resuming an already resumed/running execution
+    \item \cpp{swapcontext} calls into the kernel, consuming many CPU cycles (two orders
+        of magnitude)
+    \item does not prevent accidentally copying the stack
+    \item does not prevent accidentally resuming the running execution
         context
-    \item does not prevent accidentaly resuming an execution context that has already
-        terminated (compuation has already been finished)
-    \item does not manage lifespan of an explictly-allocated stack
-    \item context switch (\cpp{swapcotnext}) does not transfer data (requires global pointer)
+    \item does not prevent accidentally resuming an execution context that has already
+        terminated (computation has finished)
+    \item does not manage lifespan of an explicitly-allocated stack
+    \item context switch (\cpp{swapcontext}) does not transfer data (requires global pointer)
 \end{itemize}
 
 \uabschnitt{Disadvantages of \lj}
 
 \begin{itemize}
     \item C99 defines \sj / \lj for non-local jumps
-    \item \lj is not required to preserve the current stack frame, therefore jumping into a functions
-        which has exited (by return or by a different \lj higher up the stack), the behavior is undefined
-        (only long jumps up the call stack are allowed).
-    \item does not prevent accidentaly copying the stack
-    \item does not prevent accidentaly resuming an already resumed/running execution
+    \item \lj is not required to preserve the current stack frame, therefore jumping into a function
+        which has exited (by return or by a different \lj higher up the stack) is undefined behavior:
+        only \lj up the call stack is allowed
+    \item does not prevent accidentally copying the stack
+    \item does not prevent accidentally resuming the running execution
         context
-    \item does not prevent accidentaly resuming an execution context that has already
-        terminated (compuation has already been finished)
-    \item does not manage lifespan of an explictly-allocated stack
+    \item does not prevent accidentally resuming an execution context that has already
+        terminated (computation has finished)
+    \item does not manage lifespan of an explicitly-allocated stack
     \item context switch (\lj) does not transfer data (requires global pointer)
 \end{itemize}

@@ -1,6 +1,6 @@
 class continuation {
 public:
-    continuation() noexcept:
+    continuation() noexcept;
     ~continuation();
     continuation( continuation && other) noexcept;
     continuation & operator=( continuation && other) noexcept;
