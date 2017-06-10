@@ -1,15 +1,15 @@
 \abschnitt{Stack destruction}
 
-If an instance of \cont goes out of scope and the aggregated stack-pointer is
-not \nullptr\footnote{That means that the computation was not finished, hence
-the execution context was suspended in a deep call-stack.}, the stack gets
+When an instance of \cont goes out of scope and the contained stack-pointer is
+not \nullptr,\footnote{That means that the computation was not finished, hence
+the execution context is still suspended.} the stack gets
 unwound and deallocated.\\
-For this purpose member-function \resumewith is caleld with as special function
-(let's call it \unwindfn) as argument. The execution context will be
-resumed and \unwindfn is invoked. Function \unwindfn does throw exception
-\unwindex\footnote{\unwindex gets an instance of \cont that represents the
-continuation that has called the destructor as argument.}. The exception
-is catched by the first frame on the stack (the one that was created by
-\callcc). The execution path is switched back to the context that has called
+For this purpose member-function \resumewith is called with a special function
+(call it \unwindfn) as argument. The execution context will be
+resumed and \unwindfn is invoked. Function \unwindfn throws exception
+\unwindex.\footnote{\unwindex binds an instance of \cont that represents the
+continuation that called the destructor.} The exception
+is caught by the first frame on the stack: the one created by
+\callcc. Control is switched back to the context that called
 \cpp{\~continuation()} and the stack gets deallocated.
 
