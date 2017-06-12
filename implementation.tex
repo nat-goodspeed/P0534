@@ -1,26 +1,26 @@
 \abschnitt{Why \cc is low-level}
 
 \cc is a low-level implementation. \cont has the memory footprint of a pointer
-because it aggregates a pointer to the stack of the managed continuation.\\
+because it contains only a pointer to the stack of the managed continuation.\\
 \newline
-Functions expressed in assembler, consit of a \emph{function prologue} at the
-beginning of a function and \emph{function epilogue} at the end of the function.
+The assembly code generated for a function consists of a \emph{function prologue} at the
+beginning and \emph{function epilogue} at the end.
 \cppf{function}
 
-The \emph{prologue} (few lines of assembler) that prepares the stack and
+The \emph{prologue} (a few lines of assembler) prepares the stack and
 registers for use inside the function. The \emph{epilogue} restores the stack
 and registers\footnote{callee-saved registers as defined by the calling
 convention} to the state they were before the function was called.\\
 Between prologue and epilogue the computation and calls to sub-routines are
 done.\\
 \newline
-Like ordinary functions \resume and \resumewith consist of prologue and
-epilogue. The only difference to oridnary functions is, that \resume and
+Like ordinary functions, \resume and \resumewith contain prologue and
+epilogue. The only difference from ordinary functions is that \resume and
 \resumewith additionally exchange the stack- and instruction pointer
-\footnote{In fact on x86-architecture the instructions- pointer return-address
-remains already on the stack. On some RISC-architectures the link-register
-has to be preserved on the stack while the context is suspended and is loaded
-into the instruction-pointer on resumption.} between proloque and epiloque.\\
+\footnote{In fact on x86-architecture the instruction-pointer return-address
+is already stored on the stack. On some RISC-architectures the link-register
+must be preserved on the stack while the context is suspended, and is loaded
+into the instruction-pointer on resumption.} between prologue and epilogue.\\
 The prologue and epilogue of \resume and \resumewith neither consume stack space
-nor do they call sub-routines, only the stack-pointer is exchanged.
+nor do they call sub-routines; only the stack-pointer is exchanged.
 \cppf{implementation}

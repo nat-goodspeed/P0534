@@ -1,6 +1,6 @@
 class continuation {
 public:
-    continuation() noexcept:
+    continuation() noexcept;
     ~continuation();
     continuation( continuation && other) noexcept;
     continuation & operator=( continuation && other) noexcept;
@@ -15,6 +15,8 @@ public:
     bool data_available() const noexcept;
     template< typename ... Arg >
     <unspecified> get_data();
+
+    bool any_thread() const noexcept;
 
     explicit operator bool() const noexcept;
     bool operator!() const noexcept;
@@ -33,4 +35,4 @@ continuation callcc( Fn &&, Arg ...);
 template< typename StackAlloc, typename Fn, typename ...Arg >
 continuation callcc( std::allocator_arg_t, StackAlloc, Fn &&, Arg ...);
 
-struct unwind_exception {};
+struct unwind{};
