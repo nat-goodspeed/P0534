@@ -17,6 +17,18 @@
 \newcommand{\graphc}[1]{\begin{center}\graph{#1}\end{center}}
 \newcommand{\bfs}[1]{{\bfseries #1}}
 
+\lstdefinelanguage
+   [arm]{Assembler}                     % add a "arm" dialect of Assembler
+   {morekeywords={}}    % with these extra keywords:
+\lstset{
+        language=[arm]Assembler,
+        numbers=none,
+        numberstyle=\tiny,
+        numberblanklines=false,
+        stepnumber=1,
+        numbersep=10pt
+}
+
 \newcommand{\cpp}[1]{{\lstinline[
 		basicstyle=\ttfamily\small\color{black},
         breakatwhitespace=true,
@@ -46,8 +58,35 @@
         stringstyle=\ttfamily\color{magenta}
 ] {code/#1.cpp}}
 
-\newcommand{\callcc}{\cpp{std::callcc()}\xspace}
+\newcommand{\asm}[1]{
+    \lstinline[
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{green},
+        stringstyle=\color{red}
+    ] {#1}
+}
+\newcommand{\asmf}[1]{
+    \lstinputlisting[
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{green},
+        stringstyle=\color{red}
+    ] {code/#1}
+}
+\newcommand{\asmfn}[1]{
+    \lstinputlisting[
+        numbers=left,
+        basicstyle=\ttfamily\color{black},
+        keywordstyle=\color{blue},
+        commentstyle=\color{green},
+        stringstyle=\color{red}
+    ] {code/#1}
+}
+
+\newcommand{\callcc}{\cpp{std::callcc()}}
 \newcommand{\resume}{\cpp{resume()}\xspace}
+\newcommand{\contresume}{\cpp{std::continuation::resume()}}
 \newcommand{\resumewith}{\cpp{resume\_with()}}
 \newcommand{\getdata}{\cpp{get\_data()}\xspace}
 \newcommand{\dataavail}{\cpp{data\_available()}\xspace}
@@ -63,6 +102,9 @@
 \newcommand{\lj}{\emph{longjmp}\xspace}
 \newcommand{\sj}{\emph{setjmp}\xspace}
 \newcommand{\entryfn}{\emph{entry-function}\xspace}
+\newcommand{\shift}{\emph{shift}\xspace}
+\newcommand{\reset}{\emph{reset}\xspace}
+\newcommand{\currcont}{\bfs{current continuation}\xspace}
 
 \newcommand{\abschnitt}[1]{\addcontentsline{toc}{subsection}{#1}\subsection*{#1}}
 \newcommand{\uabschnitt}[1]{\paragraph*{#1}}

@@ -1,0 +1,29 @@
+\abschnitt{Additional notes}
+
+\uabschnitt{GPU}
+
+\cc as proposed in this paper does not take GPUs into account. Later revisions
+will address this issue, once we have an overarching concept of how the various
+kinds of ``lightweight execution agents'' should interact.
+
+
+\uabschnitt{SIMD}
+
+does not interfere with \cc and can be used as usual (\cc triggers the context
+switch at its invocation).\\
+Of course, depending on the calling convention, some micro-processor registers,
+dedicated to SIMD, might be preserved and restored too
+\footnote{\emph{MS Windows x64} calling convention}.
+
+
+\uabschnitt{TLS}
+
+\cc is TLS-agnostic - best practice related to TLS applies to \cc too.\\
+As shown in \nameref{mechanism}, \cc only preserves and restores
+micro-processor registers at its invocation.
+
+
+\uabschnitt{Migration between threads}
+
+\cont can be migrated between threads, except for instances of
+\cont representing \main or \entryfn of a thread (see \nameref{design}).

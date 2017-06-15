@@ -42,7 +42,7 @@
 \small
 \begin{tabbing}
     Document number: \= P0534R1\\
-    Date:            \> 2017-06-11\\
+    Date:            \> 2017-06-14\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
     Audience:        \> SG1/LEWG\\
 \end{tabbing}
@@ -55,23 +55,85 @@
 
 %//////////////////////////////////////////////////////////////////////////////
 
+\paragraph*{Abstract}
+This document proposes a C++ equivalent to the well-known concept
+\bfs{call-with-current-continuation} (abbreviated \bfs{call/cc}). This
+facility permits a program written in portable C++ to subdivide processing into
+distinct \bfs{contexts:} units smaller than a thread.
+
+Within this proposal, the unadorned term ``thread'' means a \cpp{std::thread}.
+When the Standard's more general term ``thread of execution'' is intended, it
+is spelled out in full.
+
+With \cc, processing in a given thread may be further subdivided into multiple
+contexts. Each such context qualifies as a ``thread of execution'' according
+to the definition in the Standard. However, within a given thread, control is
+cooperatively passed from one context to another.
+
+This has a couple of important implications:
+
+\begin{itemize}
+\item In each thread in a process, exactly one context is running at any given
+  time. All others are \bfs{suspended.}
+\item The running context on a thread continues running until it explicitly
+  \bfs{resumes} some other context. The act of resuming another context
+  suspends the previously-running context. This transfer of control, in which
+  one context suspends and another resumes, is \bfs{context-switching.}
+\end{itemize}
+
+The kind of context-switching presented in this proposal is called
+\bfs{stackful} because each context requires some implementation of the C++
+stack. C++ code running on a particular context may transparently call
+ordinary C++ functions. In contrast to the \bfs{\cpp{co\_await}}
+facility (proposed separately\cite{N4649}), this permits encapsulation. A
+function that suspends (by resuming some other context) needs no special
+signature. Its caller need not be aware that it might suspend. It need not
+call that function in any special way.
+
+This supports use cases that cannot be addressed with \cpp{co\_await} alone.
+
+Also in contrast to the \cpp{co\_await} facility, this proposal requires no
+changes to the core C++ language. \cc is presented as a library facility,
+albeit a library that cannot be implemented in portable C++. This is why it is
+desirable to incorporate it into the International Standard.
+
+The proposed \cc facility is intended to be foundational. While of course
+application coders are free to use the \cc API, its real promise is in
+supporting higher-level abstractions.
+
+This proposal describes the basic \cc facility, presents some illustrative use
+cases and explains why the API is set at its present level.
+
 \paragraph*{Revision History}
-This document supersedes P0534R0.\\
+This document supersedes P0534R0.\cite{P0534R0}\\
 \newline
-Changes since P0534R1:
+Changes since P0534R0:
 
 \begin{itemize}
     \item API modified
+    \begin{itemize}
+        \item \cpp{operator()} renamed to \resume
+        \item \cpp{operator(invoke\_ontop\_arg\_t)} renamed to \resumewith
+        \item \cpp{data\_available()}, \cpp{get\_data()} and \cpp{any\_thread()}
+              are now member functions instead of free functions
+        \item stack unwinding now explicitly requires specific \cpp{unwind\_exception} 
+              exception
+    \end{itemize}
     \item \cc compared with \uc and \lj
     \item why \cc is a low-level implementation
-    \item stack destruction
+    \item details of stack destruction
 \end{itemize}
 
+\input{continuations}
+\input{callcc}
+\input{mechanism}
+\input{design}
 \input{cc_vs_uc}
 \input{implementation}
 \input{destruction}
 \input{performance}
 \input{api}
+\input{notes}
 
 %//////////////////////////////////////////////////////////////////////////////
 
