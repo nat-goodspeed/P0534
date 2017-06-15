@@ -1,3 +1,4 @@
+\newpage
 \abschnitt{Continuations}
 
 A continuation is an abstract concept that represents the context state at a
@@ -9,46 +10,43 @@ structures like coroutines,  generators, lightweight threads, cooperative
 multitasking (fibers), backtracking, non-deterministic choice. In classic
 event-driven programs, organized around a main loop that fetches and dispatches
 incoming I/O events, certain asynchronous I/O sequences are logically
-sequential, and for those the written and maintained code can look and act
-sequential while using continuations.\\
+sequential. Use of continuations permits writing and maintaining code that
+looks and acts sequential, even though from time to time it may suspend while
+asynchronous I/O is pending.\\
 
-C and C++ already use implicit continuations: if a routine calls a sub-routine,
-then a (hidden) continuation (the remaining steps after the sub-routine call) is
-created. This continuation is resumed when the sub-routine returns. For
-instance the x86 architecture stores the (hidden) continuation as return address
-on the stack.\footnote{Other (RISC) architectures use a special micro-processor
-register for this purpose.}\\
+C and C++ already use implicit continuations: when running code calls a
+function, then a (hidden) continuation (the remaining steps after the function
+call) is created. This continuation is resumed when the function returns. For
+instance the x86 architecture stores the (hidden) continuation as a return
+address on the stack.\footnote{Other (RISC) architectures use a special
+micro-processor register for this purpose.}\\
 
 Continuations exposed as \bfs{first-class continuations} can be passed to and
 returned from functions, assigned to variables or stored into containers. With
 first-class continuations, a language can explicitly \bfs{control the flow of
-execution} via suspending and resuming continuations, enabling control to pass
+execution} by suspending and resuming continuations, enabling control to pass
 into a function at exactly the point where it previously suspended.\\
 Making the program state visible via first-class continuations is known as
 \bfs{reification}.\\
 
-The continuation of the computation step derived from the current point in a
+The remainder of the computation derived from the current point in a
 program's execution is called the \bfs{current continuation}. \cc captures the
-\bfs{current continuation} and passes it as the argument of the function invoked by
+\bfs{current continuation} and passes it to the function invoked by
 \cc.\\
 
 Continuations that can be called multiple times are named
 \bfs{full continuations}.\\
-\bfs{One-shot continuations} can only resumed once (a resumed 
-\bfs{one-shot continuation} becomes invalidated); control is transferred to
-an execution context where the continuation is no longer in scope.\\
-Class \cpp{std::execution_context<>}, proposed in \bfs{P0099R1}\cite{P0099R1}
-already represents a \bfs{one-shot-continuation}.\\
+\bfs{One-shot continuations} can only resumed once: once resumed, a
+\bfs{one-shot continuation} is invalidated.\\
 \bfs{Full continuations} are \bfs{not} considered in this proposal because of
-their nature, problematic in C++. Full continuations would require copies of
-the stack (including the variables), which would violate C++'s RAII pattern.\\
+their nature, which is problematic in C++. Full continuations would require copies of
+the stack (including all stack variables), which would violate C++'s RAII pattern.\\
 
 In contrast to \cc that captures the \bfs{entire remaining} continuation, the
-operators \shift and \reset create a so called \bfs{delimited continuation}. A
+operators \shift and \reset create a so-called \bfs{delimited continuation}. A
 delimited continuation represents a slice of the program context. Operator
 \reset delimits the continuation, i.e. it determines where the continuation
-starts and ends, while \shift \bfs{reifies} the continuation.\\
-\bfs{Delimited continuations} are \bfs{not part} of this proposal. However,
-delimited continuation functionality can be built on \cc, as shown in
-\nameref{delimited}.
+starts and ends, while \shift\ \bfs{reifies} the continuation.\\
+\bfs{Delimited continuations} are \bfs{not} part of this proposal. However,
+delimited continuation functionality can be built on \cc.
 

@@ -1,10 +1,10 @@
 std::continuation lambda=
-    std::callcc(  // (a)
+    std::callcc(  // (0)
         [](std::continuation && caller){
             int a=0;
             int b=1;
             for(;;){
-                caller=caller(a); // (b)
+                caller=caller.resume(a); // (1)
                 int next=a+b;
                 a=b;
                 b=next;
@@ -12,9 +12,9 @@ std::continuation lambda=
             return std::move(caller);
         });
 for (int j=0;j<10;++j) {
-    int i=std::get_data<int>(lambda); // (c)
+    int i=lambda.get_data<int>(); // (2)
     std::cout << i << " ";
-    lambda=lambda(); // (d)
+    lambda=lambda.resume(); // (3)
 }
 
 output:

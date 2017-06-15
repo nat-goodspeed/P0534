@@ -1,16 +1,16 @@
 int i=1;
 std::continuation lambda=
-    std::callcc( // (a)
+    std::callcc( // (0)
         [](std::continuation && caller){
-            int j=std::get_data<int>(caller); // (b)
+            int j=caller.get_data<int>(); // (1)
             std::cout << "inside lambda,j==" << j << std::endl;
-            caller=caller(j+1); // (c)
-            return std::move(caller); // (f)
+            caller=caller.resume(j+1); // (2)
+            return std::move(caller); // (5)
         },
         i);
-i=std::get_data<int>(lambda); // (d)
+i=lambda.get_data<int>(); // (3)
 std::cout << "i==" << i << std::endl;
-lambda=lambda(); // (e)
+lambda=lambda.resume(); // (4)
 
 output:
     inside lambda,j==1
