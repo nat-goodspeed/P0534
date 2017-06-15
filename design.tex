@@ -1,9 +1,21 @@
+\newpage
 \abschnitt{Design}\label{design}
 
-Because \cont \bfs{contains} only its
-\bfs{stack pointer} as a member variable, it is proposed as a
-\bfs{pure data structure}.
+\uabschnitt{\callcc as a factory function}
 
+Every valid \cont instance is synthesized by the \callcc facility:
+\begin{itemize}
+\item as a parameter passed into the function passed to \callcc or \resumewith
+\item as the value returned by \callcc, \resume or \resumewith.
+\end{itemize}
+
+This is intentional for consistency with the \cc facility in other
+languages.\cite{schemecallcc}\textsuperscript{,}\cite{rubycallcc}
+
+\uabschnitt{\cont footprint}
+
+\cont contains only its \bfs{stack pointer} as a member variable. It should
+typically be no larger than a pointer.
 
 \uabschnitt{Passing data}\label{subsec:data}
 
@@ -43,6 +55,11 @@ containing the values passed by the \callcc call at (a).
 \main as well as the \entryfn of a thread can be represented by a continuation.
 That \cont instance is synthesized when the running context suspends, and is
 passed into the newly-resumed context.
+
+Calling \cpp{any\_thread()} on a \cont instance representing \main, or
+the \entryfn of a thread, will return \cpp{False}: such a \cont
+must \emph{only} be resumed on its original thread.
+
 \cppf{simple}
 The \cpp{callcc()} call at (a) enters the lambda. The \cont\ \cpp{caller} at (b)
 represents the execution context of \main. Returning \cpp{caller} at (c) resumes the
@@ -139,6 +156,48 @@ Finally, \cpp{f()} returns its own \cpp{mc} variable, switching back to the main
 context.
 
 
+\uabschnitt{\callcc immediately enters new context}
+
+\callcc creates a new context and immediately calls its passed \entryfn on
+that new context.
+
+This is intentional for consistency with the \cc facility in other
+languages.\cite{schemecallcc}\textsuperscript{,}\cite{rubycallcc}
+
+Moreover, this behavior prevents a problematic usage. Suppose we had
+a \cpp{callcc\_deferred()} which would create a new context but immediately
+return to its caller. The newly-created context would first be entered by
+calling \resume on the returned \cont instance.
+\cppf{good_resume}
+But now consider this scenario:
+\cppf{bad_resume_with}
+What should happen here?
+
+\resumewith is supposed to call \cpp{injected\_function()} as if it had been
+directly called by \cpp{entry\_function()} -- rather, by the context-switch
+operation most recently executed by \cpp{entry\_function()}. But
+since \cpp{entry\_function()} has never yet been entered, it hasn't executed
+any context-switch operation. Indeed, it does not yet have a stack frame.
+
+Should \cpp{injected\_function()} \emph{become} the \entryfn
+for \cpp{newcontext}, displacing \cpp{entry\_function()} entirely?
+
+That would encounter signature problems. The \entryfn invoked
+by \callcc \emph{must} return a \cont. Yet the \cpp{fn} passed to \resumewith
+returns -- not a \cont -- but arbitrary data to be retrieved by the suspended
+context!
+
+To quickly resume the caller's context rather than prioritizing the new
+context, the \entryfn passed to \callcc can immediately context-switch back
+to its caller by calling \resume on its passed-in \cont:
+\cppf{quickly_resume}
+
+A more generic wrapper for that behavior could look something like this:
+\cppf{callcc_deferred}
+Note that since \cpp{suspend\_immediately()} \emph{has} been entered, it
+is perfectly valid for the caller of \cpp{callcc\_deferred()} to
+call \resumewith on the returned \cont.
+
 \uabschnitt{Stack destruction}\label{subsec:destruction}
 On construction of a continuation with \callcc a stack is allocated. If the
 \entryfn returns, the stack will be destroyed. If the function has not
@@ -151,9 +210,7 @@ destructor.
 
 
 \uabschnitt{Stack allocators}\label{subsec:stackalloc}
-are used to create stacks.\footnote{This concept, along with \callcc accepting
-\cpp{std::allocator\_arg\_t}, is an optional part of the proposal. It might be
-that implementations can reliably infer the optimal stack representation.}
+are used to create stacks.\\
 Stack allocators might implement arbitrary stack strategies. For instance, a
 stack allocator might append a guard page at the end of the stack, or cache
 stacks for reuse, or create stacks that grow on demand.\\
@@ -180,8 +237,14 @@ Possible types of stack allocators:
         This stack allocator creates a segmented stack with the specified
         initial size, which grows on demand.\footnote{An implementation of
         the \cpp{segmented} StackAllocator necessarily interacts with the C++
-        runtime. For instance, with gcc the Boost.Context\cite{bcontext} library
+        runtime. For instance, with gcc, the Boost.Context\cite{bcontext} library
         invokes the \cpp{\_\_splitstack\_makecontext()}
         and \cpp{\_\_splitstack\_releasecontext()} intrinsic
         functions.\cite{splitalloc}\textsuperscript{,}\cite{bctxseg}}
 \end{itemize}
+
+It is expected that the StackAllocator's allocation operation will run in the
+context of the \callcc call (before control is passed to the new context), and
+that the StackAllocator's deallocation operation will run in the context of
+the \cpp{\~continuation()} call (after control returns from the destroyed
+context). No special constraints need apply to either operation.
