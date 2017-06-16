@@ -4,12 +4,16 @@ When an instance of \cont goes out of scope and the contained stack-pointer is
 not \nullptr,\footnote{That means that the computation was not finished, hence
 the execution context is still suspended.} the stack gets
 unwound and deallocated.\\
-For this purpose member-function \resumewith is called with a special function
-(call it \unwindfn) as argument. The execution context will be
-resumed and \unwindfn is invoked. Function \unwindfn throws exception
+For this purpose member-function \resumewith is called with \termthen
+as argument. The execution context will be
+resumed and \termthen is invoked. Function\\
+\termthen throws exception
 \unwindex.\footnote{\unwindex binds an instance of \cont that represents the
-continuation that called the destructor.} The exception
+continuation that called \resumewith.} The exception
 is caught by the first frame on the stack: the one created by
 \callcc. Control is switched back to the context that called
-\cpp{\~continuation()} and the stack gets deallocated.
+\dtor and the stack gets deallocated.\\
+
+The StackAllocator's deallocate operation is called on the context that
+invoked \dtor.
 

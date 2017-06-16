@@ -60,7 +60,7 @@ destroys a continuation\\
 \begin{tabular}{ l l }
     \midrule
 
-    \cpp{\~continuation()} & (1)\\
+    \dtor & (1)\\
 
     \midrule
 \end{tabular}
@@ -473,4 +473,45 @@ up at that time.
 transferred.
 \item If an instance with valid state goes out of scope and its \cpp{fn} has not yet
 returned, the stack is unwound and deallocated.
+\end{description}
+
+\uabschnitt{std::terminate\_context\_then()}
+
+terminate the current running context, switching to the context represented by
+the passed \cont. This is like returning that \cont from the \entryfn, but may
+be called from any function on that context.
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{void terminate\_context\_then( continuation && cont )} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] throws \unwindex, binding the passed \cont. The running
+              context's first stack entry -- the one created by \callcc --
+              catches \unwindex, extracts the bound \cont and terminates the
+              current context by returning that \cont.
+\end{description}
+
+\bfs{Parameters}
+\begin{description}
+    \item[cont] the \cont to which to switch once the current context has terminated
+\end{description}
+
+\bfs{Preconditions}
+\begin{description}
+    \item[1)] \cpp{cont} must be valid (\cpp{operator bool()} returns \cpp{true})
+\end{description}
+
+\bfs{Return value}
+\begin{description}
+    \item[1)] None: \termthen does not return
+\end{description}
+
+\bfs{Exceptions}
+\begin{description}
+    \item[1)] throws \unwindex
 \end{description}
