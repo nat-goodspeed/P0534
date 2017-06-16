@@ -171,7 +171,7 @@ resumes a continuation\\
 \begin{description}
     \item[1)] \cpp{*this} represents a context of execution (\opbool returns
                \cpp{true})
-    \item[2)] \cpp{any\_thread()} returns \cpp{true}, or the running thread is
+    \item[2)] \anythread returns \cpp{true}, or the running thread is
               the same thread on which \cpp{*this} ran previously.
 \end{description}
 
@@ -272,7 +272,7 @@ context on which the operating system runs \main, or the context created by
 the operating system for a new \cpp{std::thread}.
 
 Attempting to resume such a \cont instance on any thread other than its
-original thread invokes undefined behavior. \cpp{any\_thread()} allows
+original thread invokes undefined behavior. \anythread allows
 consumer code to distinguish this case by returning \cpp{false}.
 
 

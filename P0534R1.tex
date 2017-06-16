@@ -114,8 +114,8 @@ Changes since P0534R0:
     \begin{itemize}
         \item \cpp{operator()} renamed to \resume
         \item \cpp{operator(invoke\_ontop\_arg\_t)} renamed to \resumewith
-        \item \cpp{data\_available()}, \cpp{get\_data()} and \cpp{any\_thread()}
-              are now member functions instead of free functions
+        \item \dataavail, \getdata and \anythread are now member functions
+          instead of free functions
         \item stack unwinding now explicitly requires specific \cpp{unwind\_exception} 
               exception
     \end{itemize}
@@ -126,12 +126,11 @@ Changes since P0534R0:
 
 \input{continuations}
 \input{callcc}
-\input{mechanism}
 \input{design}
+\input{performance}
+\input{mechanism}
 \input{cc_vs_uc}
 \input{implementation}
-\input{destruction}
-\input{performance}
 \input{api}
 \input{notes}
 

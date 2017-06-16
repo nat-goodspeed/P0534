@@ -1,10 +1,11 @@
 \abschnitt{Why \cc is low-level}
 
 \cc is a low-level implementation. \cont has the memory footprint of a pointer
-because it contains only a pointer to the stack of the managed continuation.\\
+because it contains only a pointer to the stack of the managed context.\\
 \newline
-The assembly code generated for a function consists of a \emph{function prologue} at the
-beginning and \emph{function epilogue} at the end.
+The assembly code generated for a typical function consists of
+a \emph{function prologue} at the beginning and \emph{function epilogue} at
+the end.
 \cppf{function}
 
 The \emph{prologue} (a few lines of assembler) prepares the stack and

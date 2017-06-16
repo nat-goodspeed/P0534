@@ -12,7 +12,7 @@ execution context (the content of the registers, see P0534R0\cite{P0534R0}).
     \item current execution context is already represented by the
         stack to which the stack-pointer points
     \item suspended execution context is passed as continuation (parameter) 
-        to the resumed execution context
+        to the resume operation
     \item no need for a global pointer that points to the current execution context
     \item data are transferred through a function call, no need for a global pointer
     \item \main and each thread's \entryfn fit seamlessly into the concept of \cc
