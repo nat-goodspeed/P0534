@@ -147,9 +147,30 @@ exception) into a suspended context. For this purpose you may call
 
 Like an \entryfn passed to \callcc, the function passed in this case must
 accept an rvalue reference to \cont. However, instead of returning
-a \cont, it \bfs{MUST RETURN BLAH BLAH BLAH} a single type or a \cpp{std::tuple}. Whatever value(s)
-it returns will become available to the context referenced by \cpp{*this} as
-the data tested by \dataavail and retrieved by \getdata.\\
+a \cont, it must return a type corresponding to the data it expects to
+receive from the \resumewith call.
+
+\begin{itemize}
+  \item If the function will call \cpp{get\_data<single\_type>()}, expecting a
+  single additional \resumewith data argument, it must return \cpp{single\_type}.
+  \item If the function will call \cpp{get\_data<type0, type1, ...>()},
+  expecting two or more additional \resumewith data arguments, it must
+  return \cpp{std::tuple<type0, type1, ...>()}: the type returned by \getdata
+  in that case.
+\end{itemize}
+
+Whatever value(s) the \resumewith function returns will become available to
+the suspended function in the context referenced by \cpp{*this} as the data
+retrieved by \getdata.\footnote{Since the \resumewith function doesn't
+explicitly return its passed-in \cont, that same \cont is also returned to the
+suspended function in the new context. That means that if the suspended
+function calls \dataavail on the returned \cont, the result is based on
+whether or not additional arguments are passed in the \resumewith call. In
+other words: if \resumewith is passed additional arguments, then
+the \resumewith function can retrieve them and return them unmodified, or
+alter them in any way desired. But if \resumewith is not passed additional
+arguments, then the value(s) returned by the \resumewith function will be
+ignored, because \dataavail will return \cpp{false}.}\\
 
 Suppose that code running on the program's main context calls \cpp{callcc(f)},
 thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
