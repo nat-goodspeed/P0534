@@ -86,14 +86,14 @@ terminating the whole process, or engaging undefined behavior.
 
 \begin{itemize}
 \item Return a valid continuation from the \entryfn.
-\item Call \termthen with a valid continuation. This throws a \unwindex
+\item Call \unwindcont with a valid continuation. This throws a \unwindex
 instance that binds that continuation.
 \item \bfs{[LEWG: Should we publish the \unwindex constructor that
 accepts \cont? Then another supported way would be to construct and
-throw \unwindex ``by hand,'' which is what \termthen does internally.]}
+throw \unwindex ``by hand,'' which is what \unwindcont does internally.]}
 \item
-Call \cpp{std::continuation::resume\_with(std::terminate\_context\_then)}.
-This is what \dtor does. Since \termthen accepts a \cont, and
+Call \cpp{std::continuation::resume\_with(std::unwind\_context)}.
+This is what \dtor does. Since \unwindcont accepts a \cont, and
 since \resumewith synthesizes a \cont and passes it to the subject function,
 this terminates the context referenced by the original \cont instance and
 switches back to the caller.

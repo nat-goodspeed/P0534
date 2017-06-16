@@ -4,10 +4,9 @@ When an instance of \cont goes out of scope and the contained stack-pointer is
 not \nullptr,\footnote{That means that the computation was not finished, hence
 the execution context is still suspended.} the stack gets
 unwound and deallocated.\\
-For this purpose member-function \resumewith is called with \termthen
+For this purpose member-function \resumewith is called with \unwindcont
 as argument. The execution context will be
-resumed and \termthen is invoked. Function\\
-\termthen throws exception
+resumed and \unwindcont is invoked. Function \unwindcont throws exception
 \unwindex.\footnote{\unwindex binds an instance of \cont that represents the
 continuation that called \resumewith.} The exception
 is caught by the first frame on the stack: the one created by
