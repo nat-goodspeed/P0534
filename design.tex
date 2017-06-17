@@ -141,55 +141,89 @@ the \entryfn's \cpp{catch} clause can return that continuation.
 \uabschnitt{Inject function into suspended context}
 Sometimes it is useful to inject a new function (for instance, to throw an
 exception) into a suspended context. For this purpose you may call
-\cpp{resume\_with(Fn &&,Args ...)}, passing:
+\cpp{resume\_with(Fn && fn,Args ... args)}, passing:
 
 \begin{itemize}
-  \item the function to execute
-  \item additional data to be retrieved by that function.
+  \item the function \cpp{fn()} to execute
+  \item additional data \cpp{args} to be retrieved by \cpp{fn()}.
 \end{itemize}
 
-Like an \entryfn passed to \callcc, the function passed in this case must
-accept an rvalue reference to \cont. However, instead of returning
-a \cont, it must return a type corresponding to the data it expects to
-receive from the \resumewith call.
+Let's say that the context represented by the \cont instance \cpp{ctx} has
+suspended in a function \cpp{suspender()}. You intend to inject
+function \cpp{fn()} into context \cpp{ctx} as if \cpp{suspender()} had directly
+called \cpp{fn()} at the point where it suspended.\\
+
+Like an \entryfn passed to \callcc, \cpp{fn()} must
+accept \cpp{std::continuation&&}. However, instead of
+returning \cont, \cpp{fn()} must return a type corresponding to the \cpp{args}
+passed to the \resumewith call.
 
 \begin{itemize}
-  \item If the function expects no additional \resumewith data arguments, it
-  should return \cpp{void}.
-  \item If the function will call \cpp{get\_data<single\_type>()}, expecting a
-  single additional \resumewith data argument, it must return \cpp{single\_type}.
-  \item If the function will call \cpp{get\_data<type0, type1, ...>()},
-  expecting two or more additional \resumewith data arguments, it must
-  return \cpp{std::tuple<type0, type1, ...>()}: the type returned by \getdata
-  in that case.
+  \item If you call \cpp{ctx.resume\_with(fn)} with no additional \cpp{args},
+  the return type of \cpp{fn()} is irrelevant: its return value is discarded.
+  \item If you call \cpp{ctx.resume\_with(fn, single\_arg)}, then \cpp{fn()}
+  must return \cpp{decltype(single\_arg)}.
+  \item If you call \cpp{ctx.resume\_with(fn, multiple\_args...)},
+  then \cpp{fn()} must return a \cpp{std::tuple} with corresponding types:
+  specifically, \cpp{decltype(std::make\_tuple(multiple\_args...))}.
 \end{itemize}
 
-Whatever value(s) the \resumewith function returns will become available to
-the suspended function in the context referenced by \cpp{*this} as the data
-retrieved by \getdata.\footnote{Since the \resumewith function doesn't
-explicitly return its passed-in \cont, that same \cont is also returned to the
-suspended function in the new context. That means that if the suspended
-function calls \dataavail on the returned \cont, the result is based on
-whether or not additional arguments are passed in the \resumewith call. In
-other words: if \resumewith is passed additional arguments, then
-the \resumewith function can retrieve them and return them unmodified, or
-alter them in any way desired. But if \resumewith is not passed additional
-arguments, then the value(s) returned by the \resumewith function will be
-ignored, because \dataavail will return \cpp{false}.}\\
+Any \cpp{args...} passed to \resumewith can be retrieved within \cpp{fn()}
+using \getdata. As with \callcc and \resume, the template arguments
+for \getdata must agree with the types passed to \resumewith:
+
+\begin{itemize}
+  \item If you call \cpp{ctx.resume\_with(fn)} with no additional \cpp{args},
+  then \dataavail will return \cpp{false}: \cpp{fn()} may not call \getdata at
+  all.
+  \item If you call \cpp{ctx.resume\_with(fn, single\_arg)}, then \dataavail
+  will return \cpp{true}, and if \cpp{fn()} calls \getdata, its template
+  argument must match \cpp{get\_data<decltype(single\_arg)>()}.
+  \item If you call \cpp{ctx.resume\_with(fn, multiple\_args...)},
+  then \dataavail will return \cpp{true}, and if \cpp{fn()} calls \getdata,
+  its template arguments must match the types of \cpp{multiple\_args...}.
+  Specifically, \cpp{get\_data<Args...>()} returns \cpp{std::tuple<Args...>};
+  that \cpp{std::tuple} must be compatible
+  with \cpp{std::make\_tuple(multiple\_args...)}.
+\end{itemize}
+
+The above describes retrieving passed values \emph{within} \cpp{fn()}. The
+value returned by \cpp{fn()} becomes available to \cpp{suspender()}.
+It is up to \cpp{fn()} whether to return the same value(s) it retrieved from
+the \resumewith call.
+
+\begin{itemize}
+  \item If you call \cpp{ctx.resume\_with(fn)} with no additional \cpp{args},
+  then \dataavail will return \cpp{false} even
+  within \cpp{suspender()}: \cpp{suspender()} may not call \getdata at all.
+  \item If you call \cpp{ctx.resume\_with(fn, args...)} -- with one or
+  more \cpp{args...} -- then \dataavail will return \cpp{true}
+  within \cpp{suspender()}. \getdata within \cpp{suspender()} will retrieve
+  the value returned by \cpp{fn()}.
+\end{itemize}
+
+Note that if you pass one or more \cpp{args...} to \resumewith,
+those \cpp{args...} \emph{must} be compatible with the return type
+of \cpp{fn()}. However, it is permissible to call \cpp{resume\_with(fn)}
+sometimes (\dataavail returns \cpp{false}) but pass compatible data in
+other \resumewith calls.\\
 
 Suppose that code running on the program's main context calls \cpp{std::callcc(f)},
 thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
 and passed into \cpp{f()}, as illustrated below.\\
+
 Suppose further that after doing some work, \cpp{f()} calls \cpp{mc.resume()},
 thereby switching back to the main context. \cpp{f()} remains suspended
 in the call to \cpp{mc.resume()}.\\
+
 At this point the main context calls \cpp{f\_ct.resume\_with(g)}
-where \cpp{g()} is declared as\\
-\cpp{int g(continuation &&)}. \cpp{g()} is entered in the context of \cpp{f()}.
-It is as if \cpp{f()}'s call to \cpp{mc.resume()} directly called \cpp{g()}.\\
-Function \cpp{g()} has the same range of possibilities as any function called on
-\cpp{f()}'s context. Its special invocation only matters when control leaves it
-in either of two ways:
+where \cpp{g()} is declared as \cpp{int g(continuation &&)}. \cpp{g()} is
+entered in the context of \cpp{f()}. It is as if \cpp{f()}'s call
+to \cpp{mc.resume()} directly called \cpp{g()}.\\
+
+Function \cpp{g()} has almost the same range of possibilities as any function
+called on \cpp{f()}'s context. Its special invocation matters when control
+leaves it in either of two ways:
 
 \begin{enumerate}
   \item If \cpp{g()} throws an exception, that exception unwinds all previous
@@ -204,13 +238,22 @@ in either of two ways:
 \cppf{ontop}
 
 Control passes from (0) to (1) to (2), and so on.\\
+
 The \cpp{f\_ct.resume\_with(g, data+1)} call at (8) passes control
 to \cpp{g()} on the context of \cpp{f()}.\\
+
 The \cpp{return} statement at (9) causes the \resume call at (6) to return,
 executing the assignment at (10). The \cpp{int} returned by \cpp{g()} is
 accessed at (11).\\
+
 Finally, \cpp{f()} returns its own \cpp{mc} variable, switching back to the main
-context.
+context.\\
+
+There is one restriction on a function \cpp{fn()} passed to \resumewith:
+neither \cpp{fn()}, nor any function it calls, may perform a context switch
+back to the context that called \resumewith -- whether directly, or indirectly
+via other contexts. \cpp{fn()} \emph{must} return (or throw an exception)
+before \resumewith returns.
 
 
 \uabschnitt{\callcc immediately enters new context}
