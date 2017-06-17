@@ -15,8 +15,7 @@ instance \cpp{target}, the \emph{original} context is saved and
 the \cpp{target} continuation is restored in its place, so that program flow
 will continue at the point at which the \cpp{target} continuation was
 originally captured. The captured \emph{original} continuation then becomes
-the \emph{return value} of the \callcc invocation in \cpp{target}
-(see \nameref{mechanism}).\\
+the \emph{return value} of the \callcc invocation in \cpp{target}.\\
 
 \cont is a \bfs{one-shot continuation}: it can be resumed at most once, is only
 move-constructible and move-assignable.
