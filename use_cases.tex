@@ -1,0 +1,73 @@
+\newpage
+\abschnitt{What is \cc good for?}
+
+\uabschnitt{Userland threads}
+For present purposes, we will use the term \bfs{fiber} to mean ``userland
+thread.''
+
+\uabschnitt{Userland threads built on \cpp{callcc()}}
+\begin{itemize}
+\item Each fiber is reified as an object. That object contains the
+  \cpp{continuation} representing its suspended context.
+\item The object representing the currently-running fiber contains
+  an invalid \cpp{continuation}.
+\item The function that launches a fiber creates its context using
+  \cpp{callcc()}.
+\item Fiber objects are known to a central fiber manager object.
+\item The fiber manager keeps fiber objects in separate containers: those
+  still waiting for something else to become ready versus those that are ready
+  to resume.
+\item Instead of directly resuming a specific other fiber, the
+  running fiber suspends by calling a scheduler to pick one of the ready
+  fibers. (Note that the scheduler can execute on the context of the fiber
+  about to suspend; we do not need two separate context switches.)
+\end{itemize}
+
+\uabschnitt{Stackful coroutines}
+
+\uabschnitt{Stackful coroutines built on \cpp{callcc()}}
+\begin{itemize}
+\item Symmetric coroutines map very directly to \cpp{callcc()} functionality.
+  Each coroutine is reified as an object. The object contains the
+  \cpp{continuation} representing its suspended context -- or, if that
+  coroutine is currently running, an invalid \cpp{continuation}.
+\item A symmetric coroutine suspends by specifying a particular other
+  coroutine object to resume. The implementation calls \resume on that other
+  coroutine object's \cpp{continuation}.
+\item An asymmetric coroutine ``knows'' its invoker: rather than explicitly
+  resuming an arbitrary other coroutine, it \emph{yields,} implicitly resuming its
+  invoker. (In just the same way, \cpp{return} implicitly resumes a function's
+  caller.)
+\item An asymmetric coroutine object could contain a reference to its
+  invoker's coroutine object, permitting an anonymous \emph{yield} operation.
+\end{itemize}
+
+\abschnitt{Why not propose stackful coroutines instead?}
+
+In fact -- we \emph{did!}\cite{N3708}\citecomma\cite{N3985} We were directed
+to bring back a lower-level proposal. That lower-level proposal has evolved to
+this present form.
+
+\abschnitt{Why not propose userland threads instead?}
+
+Consider the following bullet from P0559R0:\cite{P0559R0}
+
+\begin{itemize}
+\item ``Prefer generality over specificity: prefer standardizing general
+  building blocks on top of which domain-specific semantics can be layered, as
+  opposed to domain-specific facilities on top of which other domain-specific
+  semantics can't be layered.''
+\end{itemize}
+
+The \callcc facility proposed in this document is very low-level and very
+general. With a public implementation of this facility,\cite{bcontext} the
+author has built high-performance stackful coroutines\cite{bcoroutine2} and
+high-performance userland threads\cite{bfiber}.\\
+
+Both libraries, it should be noted, are built in portable C++ on top of the
+\cpp{callcc()} and \cpp{continuation} API. The \cpp{callcc()}-based
+implementation gives the best performance yet for each of these libraries.\\
+
+The API permits still other higher-level abstractions too. The author has also
+prototyped an implementation of delimited continuations (\shift and \reset
+operators).

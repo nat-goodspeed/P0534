@@ -1,4 +1,4 @@
-\abschnitt{Why \cc is low-level}
+\abschnitt{How low-level is \callcc?}
 
 \cc is a low-level implementation. \cont has the memory footprint of a pointer
 because it contains only a pointer to the stack of the managed context.\\
@@ -12,7 +12,7 @@ The \emph{prologue} (a few lines of assembler) prepares the stack and
 registers for use inside the function. The \emph{epilogue} restores the stack
 and registers\footnote{callee-saved registers as defined by the calling
 convention} to the state they were before the function was called.\\
-Between prologue and epilogue the computation and calls to sub-routines are
+Between prologue and epilogue the computation and calls to other functions are
 done.\\
 \newline
 Like ordinary functions, \resume and \resumewith contain prologue and
@@ -23,5 +23,5 @@ is already stored on the stack. On some RISC-architectures the link-register
 must be preserved on the stack while the context is suspended, and is loaded
 into the instruction-pointer on resumption.} between prologue and epilogue.\\
 The prologue and epilogue of \resume and \resumewith neither consume stack space
-nor do they call sub-routines; only the stack-pointer is exchanged.
+nor do they call functions; only the stack-pointer is exchanged.
 \cppf{implementation}

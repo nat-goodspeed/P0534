@@ -10,7 +10,7 @@ Every valid \cont instance is synthesized by the \callcc facility:
 \end{itemize}
 
 This is intentional for consistency with the \cc facility in other
-languages.\cite{schemecallcc}\textsuperscript{,}\cite{rubycallcc}
+languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
 
 \uabschnitt{\cont footprint}
 
@@ -219,7 +219,7 @@ context.
 that new context.
 
 This is intentional for consistency with the \cc facility in other
-languages.\cite{schemecallcc}\textsuperscript{,}\cite{rubycallcc}
+languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
 
 Moreover, this behavior prevents a problematic usage. Suppose we had
 a \cpp{callcc\_deferred()} which would create a new context but immediately
@@ -310,7 +310,7 @@ Possible types of stack allocators:
         runtime. For instance, with gcc, the Boost.Context\cite{bcontext} library
         invokes the \cpp{\_\_splitstack\_makecontext()}
         and \cpp{\_\_splitstack\_releasecontext()} intrinsic
-        functions.\cite{splitalloc}\textsuperscript{,}\cite{bctxseg}}
+        functions.\cite{splitalloc}\citecomma\cite{bctxseg}}
 \end{itemize}
 
 It is expected that the StackAllocator's allocation operation will run in the

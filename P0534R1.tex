@@ -59,16 +59,16 @@
 This document proposes a C++ equivalent to the well-known concept
 \bfs{call-with-current-continuation} (abbreviated \bfs{call/cc}). This
 facility permits a program written in portable C++ to subdivide processing into
-distinct \bfs{contexts:} units smaller than a thread.
+distinct \bfs{contexts:} units smaller than a thread.\\
 
 Within this proposal, the unadorned term ``thread'' means a \cpp{std::thread}.
 When the Standard's more general term ``thread of execution'' is intended, it
-is spelled out in full.
+is spelled out in full.\\
 
 With \cc, processing in a given thread may be further subdivided into multiple
 contexts. Each such context qualifies as a ``thread of execution'' according
 to the definition in the Standard. However, within a given thread, control is
-cooperatively passed from one context to another.
+cooperatively passed from one context to another.\\
 
 This has a couple of important implications:
 
@@ -88,18 +88,25 @@ ordinary C++ functions. In contrast to the \bfs{\cpp{co\_await}}
 facility (proposed separately\cite{N4649}), this permits encapsulation. A
 function that suspends (by resuming some other context) needs no special
 signature. Its caller need not be aware that it might suspend. It need not
-call that function in any special way.
+call that function in any special way.\\
 
-This supports use cases that cannot be addressed with \cpp{co\_await} alone.
+This supports use cases that cannot be addressed with \cpp{co\_await} alone.\\
 
 Also in contrast to the \cpp{co\_await} facility, this proposal requires no
 changes to the core C++ language. \cc is presented as a library facility,
 albeit a library that cannot be implemented in portable C++. This is why it is
-desirable to incorporate it into the International Standard.
+desirable to incorporate it into the International Standard.\\
+
+Consider the following bullets from P0559R0:\cite{P0559R0}
+
+\begin{itemize}
+\item Avoid 'compiler magic' when possible
+\item Prefer library solutions over language changes if feasible
+\end{itemize}
 
 The proposed \cc facility is intended to be foundational. While of course
 application coders are free to use the \cc API, its real promise is in
-supporting higher-level abstractions.
+supporting higher-level abstractions.\\
 
 This proposal describes the basic \cc facility, presents some illustrative use
 cases and explains why the API is set at its present level.
@@ -129,6 +136,7 @@ Changes since P0534R0:
 \input{design}
 \input{performance}
 \input{mechanism}
+\input{use_cases}
 \input{cc_vs_uc}
 \input{implementation}
 \input{api}
