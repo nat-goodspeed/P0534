@@ -1,3 +1,4 @@
+\newpage
 \abschnitt{API}\label{api}
 
 \uabschnitt{std::continuation}
@@ -31,6 +32,27 @@ constructs new continuation\\
     \item[3)] copy constructor deleted
 \end{description}
 
+{\bfseries Notes}
+\begin{description}
+\item Every valid \cont instance is synthesized by the underlying facility -- or
+move-constructed, or move-assigned, from another valid instance. There is
+no \cont constructor that directly constructs a valid \cont instance.
+\item The entry-function \cpp{fn} passed to \callcc is passed a synthesized \cont
+instance representing the suspended caller of \callcc.
+\item The entry-function \cpp{fn} passed to \resumewith is passed a
+synthesized \cont instance representing the suspended caller of \resumewith.
+\item \callcc returns a synthesized \cont representing the previously-executing
+context, the context that suspended in order to resume the caller of \callcc. The
+returned \cont instance \emph{might} represent the context created by \callcc, but
+need not: the context created by \callcc might have created (or resumed) yet
+another context, which might then have resumed the caller of \callcc.
+\item Similarly, \resume returns a synthesized \cont instance representing the
+previously-executing context, the context that suspended in order to resume
+the caller of \resume.
+\item Similarly, \resumewith returns a synthesized \cont instance representing
+the previously-executing context, the context that suspended in order to
+resume the caller of \resumewith.
+\end{description}
 
 \subparagraph*{(destructor)}\label{subpara:destructor}
 destroys a continuation\\
@@ -38,7 +60,7 @@ destroys a continuation\\
 \begin{tabular}{ l l }
     \midrule
 
-    \cpp{\~continuation()} & (1)\\
+    \dtor & (1)\\
 
     \midrule
 \end{tabular}
@@ -46,17 +68,14 @@ destroys a continuation\\
 \begin{description}
     \item[1)] destroys a \cont instance. If this instance represents a context
               of execution (\opbool returns \cpp{true}), then the context of
-              execution is destroyed too. Specifically, the stack is unwound.
-              An implementation is free to
-              unwind the stack either by throwing \cpp{std::unwind} or by
-              intrinsics not requiring \cpp{throw}.
-              \footnote{ In a program in which exceptions are thrown, it is
+              execution is destroyed too. Specifically, the stack is unwound
+              by throwing \unwindex.\footnote{ In a program in which exceptions are thrown, it is
               prudent to code a context's \entryfn with a last-ditch
               \cpp{catch (...)} clause: in general, exceptions must
-              \emph{not} leak out of the \entryfn. However, if the
-              implementation's stack unwinding is implemented by throwing an
+              \emph{not} leak out of the \entryfn. However, since
+              stack unwinding is implemented by throwing an
               exception, a correct \entryfn\ \cpp{try} statement
-              must \cpp{catch (std::unwind const&)} and rethrow it.}
+              must also \cpp{catch (std::unwind\_exception const&)} and rethrow it.}
 \end{description}
 
 
@@ -117,7 +136,8 @@ resumes a continuation\\
 
 {\bfseries Parameters}
 \begin{description}
-    \item[...args] passed to the resumed continuation
+    \item[...args] passed to the resumed continuation - see section
+                   \nameref{subsec:data}
     \item[fn] function invoked ontop of resumed continuation\\
 \end{description}
 
@@ -130,15 +150,28 @@ resumes a continuation\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn\ 
-              \cpp{fn}\\
+    \item[1)] \resume or \resumewith might
+              throw \unwindex if, while suspended, the
+              calling context is destroyed
+    \item[2)] \resume or \resumewith might throw \emph{any}
+              exception if, while suspended:
+        \begin{itemize}
+            \item some other context calls \resumewith to resume
+              this suspended context
+            \item the function \cpp{fn} passed to \resumewith --
+              or some function called by \cpp{fn} -- throws an exception
+        \end{itemize}
+    \item[3)] any exception thrown by the function \cpp{fn} passed
+              to \resumewith, or any function called by \cpp{fn}, is thrown in
+              the context referenced by \cpp{*this} rather than in the context
+              of the caller of \resumewith
 \end{description}
 
 {\bfseries Preconditions}
 \begin{description}
     \item[1)] \cpp{*this} represents a context of execution (\opbool returns
                \cpp{true})
-    \item[2)] \cpp{any\_thread()} returns \cpp{true}, or the running thread is
+    \item[2)] \anythread returns \cpp{true}, or the running thread is
               the same thread on which \cpp{*this} ran previously.
 \end{description}
 
@@ -234,12 +267,12 @@ test whether suspended continuation may be resumed on a different thread\\
 
 {\bfseries Notes}
 \newline
-A \cont instance can represent the initial context on which the operating
-system runs \main, or the context created by the operating system for a
-new \cpp{std::thread}.
+As stated in \nameref{subsec:main}, a \cont instance can represent the initial
+context on which the operating system runs \main, or the context created by
+the operating system for a new \cpp{std::thread}.
 
 Attempting to resume such a \cont instance on any thread other than its
-original thread invokes undefined behavior. \cpp{any\_thread()} allows
+original thread invokes undefined behavior. \anythread allows
 consumer code to distinguish this case by returning \cpp{false}.
 
 
@@ -370,9 +403,7 @@ create and enter a new context, capturing the current execution context (the
 specified \entryfn.\\
 \callcc acts as a factory-function: it creates and starts a new execution context
 (stack etc.) and returns a continuation that represents the rest of the execution
-context's computation.\footnote{A continuation is an abstract concept that
-represents the context state at a given point during the execution of a program
-(for more details see P0534R0, section \emph{Continuation}\cite{P0534R0})}\\
+context's computation.\\
 \callcc explicitly expresses the creation of a new execution
 context and the switch to the other execution path.\\
 
@@ -396,17 +427,16 @@ context and the switch to the other execution path.\\
               wrapped in a continuation (\cont) and passed as argument to
               \cpp{fn}.
     \item[2)] takes a callable as argument, requirements as for (1). The stack
-              is constructed using \emph{salloc}.
-              \footnote{This constructor is an optional part of the
-              proposal. It might be that implementations can reliably infer the
-              optimal stack representation.}
+              is constructed using \emph{salloc}
+              (see \nameref{subsec:stackalloc}).
 \end{description}
 
 {\bfseries Parameters}
 \begin{description}
     \item[fn]      callable (function, lambda, functor) executed in the new
                    context; expected signature \cpp{continuation(continuation &&)} 
-    \item[...args] data transferred to the new context\\
+    \item[...args] data transferred to the new context - see section
+                   \nameref{subsec:data}\\
 \end{description}
 
 {\bfseries Return value}
@@ -418,19 +448,70 @@ context and the switch to the other execution path.\\
 
 {\bfseries Exceptions}
 \begin{description}
-    \item[1)] calls \cpp{std::terminate} if an exception escapes \entryfn\ 
-              \cpp{fn}\\
+    \item[1)] calls \cpp{std::terminate} if an exception other
+              than \unwindex escapes \entryfn\ \cpp{fn}
+    \item[2)] \callcc might throw \unwindex if,
+              while suspended, the calling context is destroyed
+    \item[3)] \callcc might throw \emph{any} exception if, while
+              suspended:
+        \begin{itemize}
+            \item some other context calls \resumewith to resume
+              this suspended context
+            \item the function \cpp{fn} passed to \resumewith --
+              or some function called by \cpp{fn} -- throws an exception
+        \end{itemize}
 \end{description}
 
 {\bfseries Notes}
-\newline
-\callcc preserves the execution context of the calling context as well as stack
-parts like \emph{parameter list} and \emph{return address}.
-\footnote{required only by some x86 ABIs} Those data are restored if the calling
-context is resumed.\\
-A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
-up at that time.\\
-On return \cpp{fn} has to specify a \cont to which the execution control is
-transferred.\\
-If an instance with valid state goes out of scope and its \cpp{fn} has not yet
+\begin{description}
+\item \callcc preserves the execution context of the calling context as well as stack
+parts like \emph{parameter list} and \emph{return address}.\footnote{required
+only by some x86 ABIs} Those data are restored if the calling context is resumed.
+\item A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
+up at that time.
+\item On return \cpp{fn} must specify a \cont to which execution control is
+transferred.
+\item If an instance with valid state goes out of scope and its \cpp{fn} has not yet
 returned, the stack is unwound and deallocated.
+\end{description}
+
+\uabschnitt{std::unwind\_context()}
+
+terminate the current running context, switching to the context represented by
+the passed \cont. This is like returning that \cont from the \entryfn, but may
+be called from any function on that context.
+
+\begin{tabular}{ l l }
+    \midrule
+
+    \cpp{void unwind\_context( continuation && cont )} & (1)\\
+
+    \midrule
+\end{tabular}
+
+\begin{description}
+    \item[1)] throws \unwindex, binding the passed \cont. The running
+              context's first stack entry -- the one created by \callcc --
+              catches \unwindex, extracts the bound \cont and terminates the
+              current context by returning that \cont.
+\end{description}
+
+\bfs{Parameters}
+\begin{description}
+    \item[cont] the \cont to which to switch once the current context has terminated
+\end{description}
+
+\bfs{Preconditions}
+\begin{description}
+    \item[1)] \cpp{cont} must be valid (\cpp{operator bool()} returns \cpp{true})
+\end{description}
+
+\bfs{Return value}
+\begin{description}
+    \item[1)] None: \unwindcont does not return
+\end{description}
+
+\bfs{Exceptions}
+\begin{description}
+    \item[1)] throws \unwindex
+\end{description}

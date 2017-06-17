@@ -1,0 +1,320 @@
+\newpage
+\abschnitt{Design}\label{design}
+
+\uabschnitt{\callcc as a factory function}
+
+Every valid \cont instance is synthesized by the \callcc facility:
+\begin{itemize}
+\item as a parameter passed into the function called by \callcc or \resumewith
+\item as the value returned by \callcc, \resume or \resumewith.
+\end{itemize}
+
+This is intentional for consistency with the \cc facility in other
+languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
+
+\uabschnitt{\cont footprint}
+
+\cont contains only its \bfs{stack pointer} as a member variable. It should
+typically be no larger than a pointer.
+
+\uabschnitt{Passing data}\label{subsec:data}
+
+Data are passed to another context as additional arguments of \callcc and
+\resume.\footnote{or returned from the function invoked by \resumewith.}\\
+With functions \dataavail and \getdata the code can test for data and if desired
+retrieve the data.
+\cppf{passing_single}
+The \cpp{callcc()} call at (0) enters the lambda and passes 1 into the
+new context. The value is retrieved as \cpp{j}, as shown by (1). The expression
+\cpp{caller.resume(j+1)} at (2) resumes the original context (represented
+within the lambda by \cpp{caller}) and transfers back an integer of \cpp{j+1}.
+The assignment at (3) sets \cpp{i} to \cpp{j+1}.\\
+The call to \cpp{lambda.resume()} at (4) (note that no data is passed) resumes the
+lambda, returning from the \cpp{caller.resume(j+1)} call at (2). Here, too,
+we replace the \cont instance \cpp{caller} invalidated by the \resume call at (2)
+with the new instance returned by that same \resume call.\\
+Finally the lambda returns (the updated) \cpp{caller} at (5), terminating its
+context.\\
+Since the updated \cpp{caller} represents the continuation suspended by the call at
+(4), control returns to \main.\\
+However, since context \cpp{lambda} has now terminated, the updated \cpp{lambda} is
+invalid. Its \opbool returns \cpp{false}; its \cpp{operator\!()} returns
+\cpp{true}.\\
+
+It may seem tricky to keep track of which \cont instance is currently valid,
+representing the state of the suspended context. Please bear in mind that this
+facility is intended as a high-performance foundation for higher-level
+libraries. It is not primarily intended to be directly consumed by applications.\\
+
+Multiple arguments can be transferred into another continuation too.
+\cppf{passing_multiple}
+\cpp{caller.get\_data<int,int>()} returns a \cpp{std::tuple<int,int>}
+containing the values passed by the \callcc call at (0).
+
+
+\uabschnitt{main() and thread functions}\label{subsec:main}
+
+\main as well as the \entryfn of a thread can be represented by a continuation.
+That \cont instance is synthesized when the running context suspends, and is
+passed into the newly-resumed context.
+
+Calling \anythread on a \cont instance representing \main, or
+the \entryfn of a thread, will return \cpp{false}: such a \cont
+must \emph{only} be resumed on its original thread.
+
+\cppf{simple}
+The \cpp{callcc()} call at (0) enters the lambda. The \cont\ \cpp{caller} at (1)
+represents the execution context of \main. Returning \cpp{caller} at (2) resumes the
+original context, switching back to \main.
+
+
+\uabschnitt{\cc and std::thread}
+Any context represented by a valid \cont instance is necessarily suspended.\\
+It is valid to resume a \cont instance on any thread -- \emph{except} that
+since the operating system is responsible for the stack allocated for \main,
+as well as each \cpp{std::thread}, you must not attempt to resume a \cont
+instance representing any such context on any thread other
+than its own. \anythread tests for this.\\
+If, for \cont\ \cpp{c}, \cpp{c.any\_thread()} returns \cpp{false}, it is
+only valid to resume \cpp{c} on the thread on which it was initially
+launched.
+
+
+\uabschnitt{Termination}
+There are a few different ways to terminate a given context without
+terminating the whole process, or engaging undefined behavior.
+
+\begin{itemize}
+\item Return a valid continuation from the \entryfn.
+\item Call \unwindcont with a valid continuation. This throws a \unwindex
+instance that binds that continuation.
+\item \bfs{[LEWG: Should we publish the \unwindex constructor that
+accepts \cont? Then another supported way would be to construct and
+throw \unwindex ``by hand,'' which is what \unwindcont does internally.]}
+\item
+Call \cpp{std::continuation::resume\_with(std::unwind\_context)}.
+This is what \dtor does. Since \unwindcont accepts a \cont, and
+since \resumewith synthesizes a \cont and passes it to the subject function,
+this terminates the context referenced by the original \cont instance and
+switches back to the caller.
+\item Engage \dtor: switch to some other context, which will
+receive a \cont instance representing the current context. Make that other
+context destroy the received \cont instance.
+\end{itemize}
+
+When the \entryfn invoked by \callcc returns a valid \cont instance,
+the running context is terminated. Control switches to the context
+indicated by the returned \cont instance.\\
+Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
+undefined behavior.\\
+If the \entryfn returns the same \cont instance it was originally
+passed (or rather, the most recently updated \cont returned from \callcc or the
+previous instance's \resume), control returns to the context that most
+recently resumed the running context. However, the \entryfn may return (switch
+to) any reachable valid \cont instance.\\
+
+\emph{Calling} \contresume means: ``Please switch to the indicated context; I
+am suspending; please resume me later.''\\
+
+\emph{Returning} a particular \cont means: ``Please switch to the indicated
+context; and by the way, I am done.''
+
+
+\uabschnitt{Exceptions}\label{subsec:exceptions}
+In general, if an uncaught exception escapes from
+the \entryfn, \cpp{std::terminate} is called. There is one
+exception: \unwindex. The \callcc facility internally uses \unwindex to clean
+up the stack of a suspended context being destroyed. This exception must be
+allowed to propagate out of an \entryfn.\\
+
+A correct \entryfn\ \cpp{try / catch} block looks like this:
+\cppf{rethrow_unwind}
+
+Of course, if you do not expect the \entryfn or anything it calls to throw
+exceptions, you need no \cpp{try / catch} block.\\
+
+If a \resumewith function throws an exception that you expect to catch in the
+context's \entryfn, it is good practice to bind into the exception object the
+continuation passed to the \resumewith function so that
+the \entryfn's \cpp{catch} clause can return that continuation.
+
+\uabschnitt{Inject function into suspended context}
+Sometimes it is useful to inject a new function (for instance, to throw an
+exception) into a suspended context. For this purpose you may call
+\cpp{resume\_with(Fn &&,Args ...)}, passing:
+
+\begin{itemize}
+  \item the function to execute
+  \item additional data to be retrieved by that function.
+\end{itemize}
+
+Like an \entryfn passed to \callcc, the function passed in this case must
+accept an rvalue reference to \cont. However, instead of returning
+a \cont, it must return a type corresponding to the data it expects to
+receive from the \resumewith call.
+
+\begin{itemize}
+  \item If the function expects no additional \resumewith data arguments, it
+  should return \cpp{void}.
+  \item If the function will call \cpp{get\_data<single\_type>()}, expecting a
+  single additional \resumewith data argument, it must return \cpp{single\_type}.
+  \item If the function will call \cpp{get\_data<type0, type1, ...>()},
+  expecting two or more additional \resumewith data arguments, it must
+  return \cpp{std::tuple<type0, type1, ...>()}: the type returned by \getdata
+  in that case.
+\end{itemize}
+
+Whatever value(s) the \resumewith function returns will become available to
+the suspended function in the context referenced by \cpp{*this} as the data
+retrieved by \getdata.\footnote{Since the \resumewith function doesn't
+explicitly return its passed-in \cont, that same \cont is also returned to the
+suspended function in the new context. That means that if the suspended
+function calls \dataavail on the returned \cont, the result is based on
+whether or not additional arguments are passed in the \resumewith call. In
+other words: if \resumewith is passed additional arguments, then
+the \resumewith function can retrieve them and return them unmodified, or
+alter them in any way desired. But if \resumewith is not passed additional
+arguments, then the value(s) returned by the \resumewith function will be
+ignored, because \dataavail will return \cpp{false}.}\\
+
+Suppose that code running on the program's main context calls \cpp{std::callcc(f)},
+thereby entering \cpp{f()}. This is the point at which \cpp{mc} is synthesized
+and passed into \cpp{f()}, as illustrated below.\\
+Suppose further that after doing some work, \cpp{f()} calls \cpp{mc.resume()},
+thereby switching back to the main context. \cpp{f()} remains suspended
+in the call to \cpp{mc.resume()}.\\
+At this point the main context calls \cpp{f\_ct.resume\_with(g)}
+where \cpp{g()} is declared as\\
+\cpp{int g(continuation &&)}. \cpp{g()} is entered in the context of \cpp{f()}.
+It is as if \cpp{f()}'s call to \cpp{mc.resume()} directly called \cpp{g()}.\\
+Function \cpp{g()} has the same range of possibilities as any function called on
+\cpp{f()}'s context. Its special invocation only matters when control leaves it
+in either of two ways:
+
+\begin{enumerate}
+  \item If \cpp{g()} throws an exception, that exception unwinds all previous
+        stack entries in that context (such as \cpp{f()}'s) as well, back to a
+        matching \cpp{catch} clause.\footnote{As stated in \nameref{subsec:exceptions},
+        if there is no matching \cpp{catch} clause in that context,
+        \cpp{std::terminate()} is called.}
+  \item If \cpp{g()} returns, its return value provides data for
+        \cpp{f()}'s suspended \cpp{mc.resume()} call.
+\end{enumerate}
+
+\cppf{ontop}
+
+Control passes from (0) to (1) to (2), and so on.\\
+The \cpp{f\_ct.resume\_with(g, data+1)} call at (8) passes control
+to \cpp{g()} on the context of \cpp{f()}.\\
+The \cpp{return} statement at (9) causes the \resume call at (6) to return,
+executing the assignment at (10). The \cpp{int} returned by \cpp{g()} is
+accessed at (11).\\
+Finally, \cpp{f()} returns its own \cpp{mc} variable, switching back to the main
+context.
+
+
+\uabschnitt{\callcc immediately enters new context}
+
+\callcc creates a new context and immediately calls its passed \entryfn on
+that new context.
+
+This is intentional for consistency with the \cc facility in other
+languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
+
+Moreover, this behavior prevents a problematic usage. Suppose we had
+a \cpp{callcc\_deferred()} which would create a new context but immediately
+return to its caller. The newly-created context would first be entered by
+calling \resume on the returned \cont instance.
+\cppf{good_resume}
+But now consider this scenario:
+\cppf{bad_resume_with}
+What should happen here?
+
+\resumewith is supposed to call \cpp{injected\_function()} as if it had been
+directly called by \cpp{entry\_function()} -- rather, by the context-switch
+operation most recently executed by \cpp{entry\_function()}. But
+since \cpp{entry\_function()} has never yet been entered, it hasn't executed
+any context-switch operation. Indeed, it does not yet have a stack frame.
+
+Should \cpp{injected\_function()} \emph{become} the \entryfn
+for \cpp{newcontext}, displacing \cpp{entry\_function()} entirely?
+
+That would encounter signature problems. The \entryfn invoked
+by \callcc \emph{must} return a \cont. Yet the \cpp{fn} passed to \resumewith
+returns -- not a \cont -- but arbitrary data to be retrieved by the suspended
+context!
+
+To quickly resume the caller's context rather than prioritizing the new
+context, the \entryfn passed to \callcc can immediately context-switch back
+to its caller by calling \resume on its passed-in \cont:
+\cppf{quickly_resume}
+
+A more generic wrapper for that behavior could look something like this:
+\cppf{callcc_deferred}
+Note that since \cpp{suspend\_immediately()} \emph{has} been entered, it
+is perfectly valid for the caller of \cpp{callcc\_deferred()} to
+call \resumewith on the returned \cont.
+
+\uabschnitt{Stack destruction}\label{subsec:destruction}
+On construction of a context with \callcc a stack is allocated. If the
+\entryfn returns, the stack will be destroyed. If the function has not
+yet returned and the \nameref{subpara:destructor} of the \cont instance
+representing that context is called, the stack will be unwound and destroyed.\\
+
+For this purpose member-function \resumewith is called with \unwindcont
+as argument. The execution context will be temporarily
+resumed and \unwindcont is invoked. Function \unwindcont throws exception
+\unwindex.\footnote{\unwindex binds an instance of \cont that represents the
+continuation that called \resumewith.} The exception
+is caught by the first frame on the stack: the one created by
+\callcc. Control is switched back to the context that called
+\dtor and the stack gets deallocated.\\
+
+The StackAllocator's deallocate operation is called on the context that
+invoked \dtor.\\
+
+The stack on which \cpp{main()} is executed, as well as the stack implicitly
+created by \cpp{std::thread}'s constructor, is allocated by the operating
+system. Such stacks are recognized by \cont (\anythread
+returns \cpp{false}), and are not deallocated by its destructor.
+
+
+\uabschnitt{Stack allocators}\label{subsec:stackalloc}
+are used to create stacks.\\
+Stack allocators might implement arbitrary stack strategies. For instance, a
+stack allocator might append a guard page at the end of the stack, or cache
+stacks for reuse, or create stacks that grow on demand.\\
+Because stack allocators are provided by the implementation, and are only used
+as parameters of \callcc, the StackAllocator concept is an implementation detail,
+used only by the internal mechanisms of the \cc implementation. Different
+implementations might use different StackAllocator concepts.\\
+However, when an implementation provides a stack allocator matching one of
+the descriptions below, it should use the specified name.\\
+Possible types of stack allocators:
+\begin{itemize}
+    \item \cpp{protected\_fixedsize}: The constructor accepts a \cpp{size\_t}
+        parameter. This stack allocator constructs a contiguous stack of
+        specified size, appending a guard page at the end to protect against
+        overflow. If the guard page is accessed (read or write operation), a
+        segmentation fault/access violation is generated by the operating
+        system.
+    \item \cpp{fixedsize}: The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator constructs a contiguous stack of specified size.
+        In contrast to \cpp{protected\_fixedsize}, it does not append a guard
+        page. The memory is simply managed by \cpp{std::malloc()}
+        and \cpp{std::free()}, avoiding kernel involvement.
+    \item \cpp{segmented}: The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator creates a segmented stack with the specified
+        initial size, which grows on demand.\footnote{An implementation of
+        the \cpp{segmented} StackAllocator necessarily interacts with the C++
+        runtime. For instance, with gcc, the Boost.Context\cite{bcontext} library
+        invokes the \cpp{\_\_splitstack\_makecontext()}
+        and \cpp{\_\_splitstack\_releasecontext()} intrinsic
+        functions.\cite{splitalloc}\citecomma\cite{bctxseg}}
+\end{itemize}
+
+It is expected that the StackAllocator's allocation operation will run in the
+context of the \callcc call (before control is passed to the new context), and
+that the StackAllocator's deallocation operation will run in the context of
+the \dtor call (after control returns from the destroyed
+context). No special constraints need apply to either operation.
