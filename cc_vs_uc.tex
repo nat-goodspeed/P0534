@@ -7,7 +7,7 @@ execution context (the content of the registers, see P0534R0\cite{P0534R0}).
 
 \begin{itemize}
     \item only the target has to be provided at resumption
-        (\cpp{swap\_ucontext()} required source and target)
+        (\cpp{swapcontext()} required source and target)
     \item current execution context is already represented by the
         stack to which the stack-pointer points
     \item suspended execution context is passed as continuation (parameter) 
