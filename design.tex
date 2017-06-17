@@ -19,32 +19,55 @@ typically be no larger than a pointer.
 
 \uabschnitt{Passing data}\label{subsec:data}
 
-Data are passed to another context as additional arguments of \callcc and
-\resume.\footnote{or returned from the function invoked by \resumewith.}\\
-With functions \dataavail and \getdata the code can test for data and if desired
-retrieve the data.
+Data may be passed to another context as additional arguments of \callcc and
+\resume.\footnote{or returned from the function invoked by \resumewith; see
+section \nameref{subsec:resumewith}}\\
+
+With functions \dataavail and \getdata the code can test for data and, if desired,
+retrieve the data.\\
+
+Any additional data arguments passed to \callcc or \resume can be retrieved by
+the created/resumed context using \getdata. The template arguments
+for \getdata must agree with the types passed to \callcc or \resume:
+
+\begin{itemize}
+  \item If you call \cpp{std::callcc(fn)} or \resume with no additional arguments,
+  then \dataavail will return \cpp{false}: \cpp{fn()} may not call \getdata at
+  all.
+  \item If you call \cpp{std::callcc(fn, single\_arg)}
+  or \cpp{resume(single\_arg)}, then \dataavail will return \cpp{true}, and
+  if \cpp{fn()} calls \getdata, its template argument must
+  match \cpp{get\_data<decltype(single\_arg)>()}.
+  \item If you call \cpp{std::callcc(fn, multiple\_args...)}
+  or \cpp{resume(multiple\_args...)}, then \dataavail will return \cpp{true},
+  and if \cpp{fn()} calls \getdata, its template arguments must match the
+  types of \cpp{multiple\_args...}. Specifically, \cpp{get\_data<Args...>()}
+  returns \cpp{std::tuple<Args...>}; that \cpp{std::tuple} must be compatible
+  with \cpp{std::make\_tuple(multiple\_args...)}.
+\end{itemize}
+
 \cppf{passing_single}
+
 The \cpp{callcc()} call at (0) enters the lambda and passes 1 into the
 new context. The value is retrieved as \cpp{j}, as shown by (1). The expression
 \cpp{caller.resume(j+1)} at (2) resumes the original context (represented
 within the lambda by \cpp{caller}) and transfers back an integer of \cpp{j+1}.
 The assignment at (3) sets \cpp{i} to \cpp{j+1}.\\
+
 The call to \cpp{lambda.resume()} at (4) (note that no data is passed) resumes the
 lambda, returning from the \cpp{caller.resume(j+1)} call at (2). Here, too,
 we replace the \cont instance \cpp{caller} invalidated by the \resume call at (2)
 with the new instance returned by that same \resume call.\\
+
 Finally the lambda returns (the updated) \cpp{caller} at (5), terminating its
 context.\\
+
 Since the updated \cpp{caller} represents the continuation suspended by the call at
 (4), control returns to \main.\\
+
 However, since context \cpp{lambda} has now terminated, the updated \cpp{lambda} is
 invalid. Its \opbool returns \cpp{false}; its \cpp{operator\!()} returns
 \cpp{true}.\\
-
-It may seem tricky to keep track of which \cont instance is currently valid,
-representing the state of the suspended context. Please bear in mind that this
-facility is intended as a high-performance foundation for higher-level
-libraries. It is not primarily intended to be directly consumed by applications.\\
 
 Multiple arguments can be transferred into another continuation too.
 \cppf{passing_multiple}
@@ -70,11 +93,13 @@ original context, switching back to \main.
 
 \uabschnitt{\cc and std::thread}
 Any context represented by a valid \cont instance is necessarily suspended.\\
+
 It is valid to resume a \cont instance on any thread -- \emph{except} that
 since the operating system is responsible for the stack allocated for \main,
 as well as each \cpp{std::thread}, you must not attempt to resume a \cont
 instance representing any such context on any thread other
 than its own. \anythread tests for this.\\
+
 If, for \cont\ \cpp{c}, \cpp{c.any\_thread()} returns \cpp{false}, it is
 only valid to resume \cpp{c} on the thread on which it was initially
 launched.
@@ -105,8 +130,10 @@ context destroy the received \cont instance.
 When the \entryfn invoked by \callcc returns a valid \cont instance,
 the running context is terminated. Control switches to the context
 indicated by the returned \cont instance.\\
+
 Returning an invalid \cont instance (\opbool returns \cpp{false}) invokes
 undefined behavior.\\
+
 If the \entryfn returns the same \cont instance it was originally
 passed (or rather, the most recently updated \cont returned from \callcc or the
 previous instance's \resume), control returns to the context that most
@@ -138,7 +165,7 @@ context's \entryfn, it is good practice to bind into the exception object the
 continuation passed to the \resumewith function so that
 the \entryfn's \cpp{catch} clause can return that continuation.
 
-\uabschnitt{Inject function into suspended context}
+\uabschnitt{Inject function into suspended context}\label{subsec:resumewith}
 Sometimes it is useful to inject a new function (for instance, to throw an
 exception) into a suspended context. For this purpose you may call
 \cpp{resume\_with(Fn && fn,Args ... args)}, passing:
@@ -324,15 +351,19 @@ returns \cpp{false}), and are not deallocated by its destructor.
 
 \uabschnitt{Stack allocators}\label{subsec:stackalloc}
 are used to create stacks.\\
+
 Stack allocators might implement arbitrary stack strategies. For instance, a
 stack allocator might append a guard page at the end of the stack, or cache
 stacks for reuse, or create stacks that grow on demand.\\
+
 Because stack allocators are provided by the implementation, and are only used
 as parameters of \callcc, the StackAllocator concept is an implementation detail,
 used only by the internal mechanisms of the \cc implementation. Different
 implementations might use different StackAllocator concepts.\\
+
 However, when an implementation provides a stack allocator matching one of
 the descriptions below, it should use the specified name.\\
+
 Possible types of stack allocators:
 \begin{itemize}
     \item \cpp{protected\_fixedsize}: The constructor accepts a \cpp{size\_t}
