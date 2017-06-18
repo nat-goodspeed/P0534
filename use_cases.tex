@@ -60,7 +60,7 @@ The Boost.Fiber library\cite{bfiber} is an implementation of fibers based on
 the \cpp{callcc()} implementation in Boost.Context.\cite{bcontext}
 
 \uabschnitt{Why not use \cpp{std::thread}s?}
-There are two reasons to prefer userland threads over \cpp{std::thread}s:
+There are a few reasons to prefer userland threads over \cpp{std::thread}s:
 \begin{description}
   \item[Performance:] The Skynet benchmark results\cite{bfiberperf} illustrate
   that userland context-switching can be three orders of magnitude faster than
@@ -71,6 +71,8 @@ There are two reasons to prefer userland threads over \cpp{std::thread}s:
   reasonable (even when possible) to launch that many kernel threads.
   Kernel-mediated context-switching overhead starts to overwhelm the
   processor.
+  \item[Thread safety:] Refactoring an existing chain of callbacks into
+  userland threads is guaranteed to introduce no new data races.
 \end{description}
 
 \uabschnitt{Why not use \coawait\cite{N4649}?}
@@ -253,7 +255,10 @@ A few examples of such cases:\\
 
   The input iterator corresponding to the \cpp{pull\_type} coroutine can then
   be dereferenced as desired. Every time a new item is requested, the Karma
-  generator is resumed to produce it.
+  generator is resumed to produce it.\\
+
+  Attempting to use \coawait for this would require rewriting the Boost.Spirit
+  Karma library.
 \end{description}
 
 \uabschnitt{Stackful coroutines built on \cpp{callcc()}}
