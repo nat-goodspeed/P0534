@@ -73,7 +73,7 @@ There are two reasons to prefer userland threads over \cpp{std::thread}s:
   processor.
 \end{description}
 
-\uabschnitt{Why not use \coawait?\cite{N4649}}
+\uabschnitt{Why not use \coawait\cite{N4649}?}
 The \coawait facility is best suited for new code. The caller of
 a \coawait function must itself be a \coawait function, and so
 on all the way up to the launch point.\\
@@ -152,8 +152,7 @@ operators).
 
 The Boost.Coroutine2 library\cite{bcoroutine2} is an implementation of
 stackful coroutines based on the \cpp{callcc()} implementation in
-Boost.Context.\cite{bcontext} Both symmetric and asymmetric coroutines are
-supported.\\
+Boost.Context.\cite{bcontext}\\
 
 With this API, a \cpp{pull\_type} asymmetric coroutine functions as a
 generator: it is resumed each time its invoker requests the next data item.
