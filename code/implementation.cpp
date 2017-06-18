@@ -9,10 +9,10 @@ private:
 public:
     ~continuation() {
         if ( nullptr != vp) {
-            // resume context by calling resume_with().
-            // apply a special function to resume_with() 
-            // that throws a std::unwind_exception.
-            // this exception is caught at the last stack-frame,
+            // resume context by calling resume_with(),
+            // passing std::unwind_context(), which throws
+            // std::unwind_exception.
+            // this exception is caught in the first stack-frame,
             // i.e. the stack-frame originally prepared by callcc().
             // from that stack frame switch back to the context that
             // invoked ~continuation().
