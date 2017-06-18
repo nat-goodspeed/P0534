@@ -28,6 +28,7 @@ A instance of \cont contains the stack address of a suspended execution.
 \begin{itemize}
     \item represents the continuation of a suspended context
     \item prevents accidentally copying the stack
+    \item prevents accidentally resuming a context that was previously resumed
     \item prevents accidentally resuming the running execution
         context
     \item prevents accidentally resuming an execution context that has already
