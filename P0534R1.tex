@@ -42,8 +42,9 @@
 \small
 \begin{tabbing}
     Document number: \= P0534R1\\
-    Date:            \> 2017-06-17\\
+    Date:            \> 2017-06-18\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
+    Authors:         \> Oliver Kowalke (oliver.kowalke@gmail.com), Nat Goodspeed (nat@lindenlab.com)\\
     Audience:        \> SG1/LEWG\\
 \end{tabbing}
 
@@ -120,6 +121,10 @@ implementation,\cite{bcontext} maintained by a single author, supports a
 small set of current platforms available to that author. Should \cc be
 integrated into the Standard, it will become universally available.\\
 
+Moreover, correct support for certain platforms might involve undocumented
+complexity. The runtime vendor is best positioned to implement the specified
+functionality.\\
+
 Compiler awareness of this facility could enable certain optimizations as
 well:
 
@@ -148,6 +153,7 @@ Changes since P0534R0:
         \item stack unwinding now explicitly requires specific \cpp{unwind\_exception} 
               exception
     \end{itemize}
+    \item added example use cases
     \item \cc compared with \uc and \lj
     \item why \cc is a low-level implementation
     \item details of stack destruction
