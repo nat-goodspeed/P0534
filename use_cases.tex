@@ -1,9 +1,109 @@
 \newpage
-\abschnitt{What is \cc good for?}
+\abschnitt{Use case: userland threads}
+\callcc can be used to implement userland threads. A userland thread resembles
+a \cpp{std::thread} in that it is launched and proceeds more or less
+independently. Its lifespan is not tied to the code that launched it.\\
 
-\uabschnitt{Userland threads}
+The operating system kernel schedules \cpp{std::thread}s. When there are more
+threads on the system than processor cores (which is frequently the case), it
+gives every such thread a time slice, preemptively and transparently
+suspending it once it has consumed that time slice.\\
+
+In contrast, a userland thread does not create additional work for the kernel
+scheduler. As far as the kernel is concerned, that userland thread is simply
+the work the kernel thread is choosing to do at this moment. When context
+switches from one userland thread to another, the kernel is not engaged.\\
+
 For present purposes, we will use the term \bfs{fiber} to mean ``userland
-thread.''
+thread.''\\
+
+A fiber suspends by calling its own (userland) scheduler. The scheduler
+decides which of the other fibers are ready to run, picks one and resumes
+it. Typically a suspending fiber is waiting \emph{for} something: a timer,
+asynchronous I/O, work performed by another fiber or another thread. The
+suspending fiber first arranges to be notified when the wait is over. That
+notification informs the scheduler that this fiber is once again ready to run.\\
+
+Because each fiber has a C++ stack, the details of arranging notification and
+suspending can be encapsulated in a lower-level function. Consuming code calls
+that function, which returns with expected results once they become available.
+The fact that the lower-level function suspended, allowing other fibers to run
+in the meantime, is transparent to the caller.\\
+
+In effect, fibers provide a way to organize code running within a kernel
+thread. Fibers provide no more parallelism than setting up a chain of
+callbacks, which is the conventional way to orchestrate a sequence of
+asynchronous operations. But code running on a fiber looks and behaves as if
+the underlying operations were classic blocking operations.\footnote{In a
+sense, they are -- but they block only the calling \emph{fiber,} not the
+entire host \emph{thread.}}\\
+
+Fibers permit structuring your code into layers of abstraction, even when the
+underlying I/O is asynchronous. Chains of callbacks do not permit that.\\
+
+Fibers permit ordinary use of stack variables. Chains of callbacks do not
+permit that.\\
+
+C++ code based on asynchronous operations can be (and has been) written in a
+startling variety of different ways. But when such code is written using
+fibers, it is both easier to write and easier to reason about -- thus easier
+to maintain, and therefore more robust.\\
+
+Asynchronous I/O is becoming increasingly pervasive in modern computer
+systems. It's clear that we need some better tactic than chains of callbacks,
+state machines, big switch statements, Duff's Device, etc. etc.\\
+
+Fibers allow us to use the native control structures provided by C++ itself to
+organize and maintain our code.\\
+
+The Boost.Fiber library\cite{bfiber} is an implementation of fibers based on
+the \cpp{callcc()} implementation in Boost.Context.\cite{bcontext}
+
+\uabschnitt{Why not use \cpp{std::thread}s?}
+There are two reasons to prefer userland threads over \cpp{std::thread}s:
+\begin{description}
+  \item[Performance:] The Skynet benchmark results\cite{bfiberperf} illustrate
+  that userland context-switching can be three orders of magnitude faster than
+  kernel-mediated context-switching.
+  \item[Scalability:] You can productively run many more userland threads in a
+  single process than you could run kernel threads. The Skynet
+  benchmark\cite{bfiberperf} tests a million concurrent tasks. It is not
+  reasonable (even when possible) to launch that many kernel threads.
+  Kernel-mediated context-switching overhead starts to overwhelm the
+  processor.
+\end{description}
+
+\uabschnitt{Why not use \coawait?\cite{N4649}}
+The \coawait facility is best suited for new code. The caller of
+a \coawait function must itself be a \coawait function, and so
+on all the way up to the launch point.\\
+
+If you are modifying existing code to use \coawait, you quickly find that
+introducing a new \coawait operation into a given function requires
+transitively modifying every function that directly calls it, then also
+modifying every function that calls any of \emph{those...}\\
+
+Modification for \coawait requires more than sprinkling \coawait
+operations throughout your code base. It also typically requires altering the
+signature of every affected function. A function invoked by \coawait
+must be able to communicate to the \coawait operation whether it is
+suspending or returning with a result. This is often communicated by using a
+return type such as \cpp{std::future}, which can express the absence of data
+and pass control back to the \coawait operation once data become
+available.\\
+
+Of course, as has been pointed out,\cite{N4045} \cpp{std::future} introduces
+overhead of its own.\\
+
+It is not usually emphasized that each call to a \coawait function
+implies a \cpp{malloc()} call to obtain a heap activation frame;
+each \cpp{return} implies a corresponding \cpp{free()} call. Under certain
+circumstances -- specifically, the case of a function-local coroutine -- that
+overhead can be optimized away. When \coawait is used to emulate
+userland threads, it cannot.\\
+
+One might consider the use of a memory pool for activation frames. This is an
+excellent idea. A memory pool for activation frames is called a ``stack.''\\
 
 \uabschnitt{Userland threads built on \cpp{callcc()}}
 \begin{itemize}
@@ -15,38 +115,13 @@ thread.''
   \cpp{callcc()}.
 \item Fiber objects are known to a central fiber manager object.
 \item The fiber manager keeps fiber objects in separate containers: those
-  still waiting for something else to become ready versus those that are ready
+  still waiting for something else versus those that are ready
   to resume.
 \item Instead of directly resuming a specific other fiber, the
   running fiber suspends by calling a scheduler to pick one of the ready
   fibers. (Note that the scheduler can execute on the context of the fiber
   about to suspend; we do not need two separate context switches.)
 \end{itemize}
-
-\uabschnitt{Stackful coroutines}
-
-\uabschnitt{Stackful coroutines built on \cpp{callcc()}}
-\begin{itemize}
-\item Symmetric coroutines map very directly to \cpp{callcc()} functionality.
-  Each coroutine is reified as an object. The object contains the
-  \cpp{continuation} representing its suspended context -- or, if that
-  coroutine is currently running, an invalid \cpp{continuation}.
-\item A symmetric coroutine suspends by specifying a particular other
-  coroutine object to resume. The implementation calls \resume on that other
-  coroutine object's \cpp{continuation}.
-\item An asymmetric coroutine ``knows'' its invoker: rather than explicitly
-  resuming an arbitrary other coroutine, it \emph{yields,} implicitly resuming its
-  invoker. (In just the same way, \cpp{return} implicitly resumes a function's
-  caller.)
-\item An asymmetric coroutine object could contain a reference to its
-  invoker's coroutine object, permitting an anonymous \emph{yield} operation.
-\end{itemize}
-
-\abschnitt{Why not propose stackful coroutines instead?}
-
-In fact -- we \emph{did!}\cite{N3708}\citecomma\cite{N3985} We were directed
-to bring back a lower-level proposal. That lower-level proposal has evolved to
-this present form.
 
 \abschnitt{Why not propose userland threads instead?}
 
@@ -72,3 +147,195 @@ these libraries.\\
 The API permits still other higher-level abstractions too. The author has also
 prototyped an implementation of delimited continuations (\shift and \reset
 operators).
+\newpage
+\abschnitt{Use case: stackful coroutines}
+
+The Boost.Coroutine2 library\cite{bcoroutine2} is an implementation of
+stackful coroutines based on the \cpp{callcc()} implementation in
+Boost.Context.\cite{bcontext} Both symmetric and asymmetric coroutines are
+supported.\\
+
+With this API, a \cpp{pull\_type} asymmetric coroutine functions as a
+generator: it is resumed each time its invoker requests the next data item.
+The library provides input iterator support for \cpp{pull\_type} coroutines;
+such a generator may provide data to any range operation compatible with input
+iterators, for example range \cpp{for}.\\
+
+Similarly, a \cpp{push\_type} asymmetric coroutine is a data sink. It is
+resumed each time its invoker passes the next data item. The library provides
+output iterator support for \cpp{push\_type} coroutines.\\
+
+The API permits chaining\cite{bcoroutinechaining} of coroutines. Indeed, a
+function that accepts both \cpp{pull\_type} and \cpp{push\_type} coroutine
+endpoints can be chained without having to care whether it's in an ``input
+chain'' or an ``output chain.''\\
+
+Invoking code instantiates a coroutine, then engages with it either by
+requesting data items or passing data items to it.\\
+
+\uabschnitt{Why not use \coawait?\cite{N4649}}
+
+This kind of use case is actually where \coawait shines. Significant effort
+has already been invested in compiler optimizations that can make a small
+local \coawait coroutine ``vanish.''\\
+
+Even so, there remain significant cases that cannot readily be handled
+by \coawait. Generally speaking, there are times when it's very useful to run
+your processing on a whole separate stack.\\
+
+A few examples of such cases:\\
+
+\begin{description}
+\item[Recursive SAX parsing] There are two common ways to parse an
+  XML document.\\
+
+  With \bfs{DOM} parsing, you read the entire document into memory as a linked
+  data structure. You may then traverse that structure any way you want,
+  including recursively. Of course, the caveat is that you must have enough
+  free memory to represent the entire document.\\
+
+  With \bfs{SAX} parsing, the document is streamed. Application code is
+  notified (via callbacks) when the start and end of each element is
+  encountered. The benefit is that this can handle XML documents of arbitrary
+  size: you need not store the entire document in memory at the same time. The
+  drawback is that you must manually track element nesting.\\
+
+  A C++Now 2014 talk\cite{ohmy} illustrates how stackful coroutines permit you
+  to use an off-the-shelf SAX parser to structure your processing code as
+  recursion over an XML document of arbitrary size being streamed through your
+  application.\\
+
+  Essentially, it permits passing callback events from the SAX parser into
+  recursive processing code. Having two different stacks allows the SAX parser
+  to call application callbacks, which then return to the parser to continue,
+  while the application performs recursive processing on the other stack.\\
+
+  Attempting to use \coawait for this would require rewriting the SAX parser.
+\item[Lazy visitor-based processing] Even when you do have an entire data
+  structure in memory, a particular library might use callbacks -- or visitors
+  -- to engage application-specific processing.\\
+
+  The Boost.Graph library\cite{bgraph} provides a number of useful graph
+  traversals and processing algorithms. Its API relies heavily on
+  visitors.\cite{bgraphvisitor}\\
+
+  The problem with that design is that the Boost.Graph algorithm drives the
+  traversal. The visitor is called for every applicable node or edge on the
+  graph. What if you want to stop? What if you want to pause? What if you want
+  to proceed stepwise?\\
+
+  For example, consider the problem of finding a route from node A to node B
+  in a densely-connected graph. You might consider taking a step outward from
+  node A, taking a step outward from node B, taking another from node A, and
+  so forth, until the two traversals reach the same node.\\
+
+  This is unreasonably difficult using visitors.\\
+
+  A C++Now 2016 talk\cite{visitors} illustrates how stackful coroutines permit
+  you to run two concurrent Boost.Graph traversal algorithms on separate
+  stacks, ``pulling'' visitor events from each traversal on demand,
+  interleaving calls to the two traversals.\\
+
+  Attempting to use \coawait for this would require rewriting the Boost.Graph
+  algorithm of interest.
+\item[Connecting output iterator to input iterator] In February 2017, a
+  question was asked on the Boost developers' mailing list:\cite{lazyspirit}
+  Can a Boost.Spirit\cite{bspirit} Karma\cite{bspiritkarma} generator, which
+  takes an output iterator, be engaged lazily? Can consuming code request
+  one item at a time?\\
+
+  The answer is straightforward: run the Karma generator in a
+  Boost.Coroutine \cpp{pull\_type} asymmetric coroutine. Such a coroutine
+  receives, as a parameter, a synthesized \cpp{push\_type} coroutine endpoint
+  representing its invoker.\\
+
+  Boost.Coroutine provides an output iterator façade for a \cpp{push\_type}
+  coroutine endpoint. This output iterator is passed to the Karma generator.\\
+
+  The input iterator corresponding to the \cpp{pull\_type} coroutine can then
+  be dereferenced as desired. Every time a new item is requested, the Karma
+  generator is resumed to produce it.
+\end{description}
+
+\uabschnitt{Stackful coroutines built on \cpp{callcc()}}
+\begin{itemize}
+\item Symmetric coroutines map very directly to \cpp{callcc()} functionality.
+  Each coroutine is reified as an object. The object contains the
+  \cpp{continuation} representing its suspended context -- or, if that
+  coroutine is currently running, an invalid \cpp{continuation}.
+\item A symmetric coroutine suspends by specifying a particular other
+  coroutine object to resume. The implementation calls \resume on that other
+  coroutine object's \cpp{continuation}.
+\item An asymmetric coroutine ``knows'' its invoker: rather than explicitly
+  resuming an arbitrary other coroutine, it \emph{yields,} implicitly resuming its
+  invoker. (In just the same way, \cpp{return} implicitly resumes a function's
+  caller.)
+\item An asymmetric coroutine object could contain a reference to its
+  invoker's coroutine object, permitting an anonymous \emph{yield} operation.
+\end{itemize}
+
+\abschnitt{Why not propose stackful coroutines instead?}
+
+In fact -- we \emph{did!}\cite{N3708}\citecomma\cite{N3985} We were directed
+to bring back a lower-level proposal. That lower-level proposal has evolved to
+this present form.
+\newpage
+\abschnitt{Use case: many small stacks, one deep stack}
+Proponents of \coawait frequently describe a particular execution
+environment: a 32-bit Windows server process supporting millions of clients in
+a transiently-stateful way, preserving some amount of state data across some
+number of asynchronous operations.\\
+
+It is pointed out that calls to opaque library, runtime and operating-system
+functions may consume arbitrary amounts of stack space. The inability to
+predict stack consumption in advance leads the Windows operating system to
+allocate a 1MB stack for each kernel thread.\\
+
+Of course, that stack memory is not committed until actually used. Still, it
+does present a problem: in a 32-bit process, you quickly run out of address
+space. You are constrained to no more than\\
+
+$ \frac{2^{32} - (size\ of\ all\ code) - (size\ of\ all\ other\ data)}{stack\ size} $\\
+
+stacks. Even if you set both \cpp{(size of all code)} and \cpp{(size of all other
+data)} to zero -- impossible, in practice -- you can allocate no more than 4096
+1MB stacks. 4096 is very much smaller than ``millions.''\\
+
+On another operating system, one could use segmented stacks, but those are not
+supported on Windows.\\
+
+In a 64-bit process, the limitation would be actual memory consumption rather
+than the address space. But it is suggested that many people still use 32-bit
+server processes.\\
+
+When considering userland threads, we might not be quite as conservative as
+the Windows operating system. We might decide that we need far less stack
+space than 1MB per userland thread. We might be so bold as to suggest 16KB
+stacks. But that \emph{still} is constrained to a theoretical maximum of
+262144 stacks -- and that's without code or any other data. This falls short
+of ``millions'' by at least an order of magnitude.\\
+
+We might be certain that our own code requires very little stack space -- even
+less than 16KB. But does our code ever call library functions? runtime
+functions? operating-system functions? How much stack space do \emph{they}
+consume? This brings us back to the original unanswerable question.\\
+
+Proponents of the \coawait facility explain that since each \coawait function
+allocates a separate heap activation frame -- in effect, each has its own tiny
+stack -- the thread's main stack is left largely untouched. Calls to opaque
+library or runtime or operating-system functions that require arbitrary stack
+space consume the thread's main stack, which is presumed to be Big Enough.\\
+
+With \cc, we can use a similar trick. We can construct each new context with a
+very small stack: just big enough for the function calls in our own code. We
+can set aside one ``big enough'' stack as a common resource, shunting function
+calls of unknown depth onto the shared ``big enough'' stack.\\
+
+We assume that opaque functions of this kind will not themselves suspend.
+Please note that the \coawait scenario requires the same assumption.\\
+
+\cppf{deepstack}
+
+(With \callcc replaced by \cpp{boost::context::callcc()} and \cont replaced by\\
+\cpp{boost::context::continuation}, and with lavish \cpp{std::cout}
+annotation, the program above compiles and runs as expected.)
