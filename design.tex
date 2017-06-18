@@ -378,11 +378,12 @@ Possible types of stack allocators:
         page. The memory is simply managed by \cpp{std::malloc()}
         and \cpp{std::free()}, avoiding kernel involvement.
     \item \cpp{segmented}: The constructor accepts a \cpp{size\_t} parameter.
-        This stack allocator creates a segmented stack with the specified
-        initial size, which grows on demand.\footnote{An implementation of
-        the \cpp{segmented} StackAllocator necessarily interacts with the C++
-        runtime. For instance, with gcc, the Boost.Context\cite{bcontext} library
-        invokes the \cpp{\_\_splitstack\_makecontext()}
+        This stack allocator creates a segmented stack\cite{gccsplit} with the
+        specified initial size, which grows on demand.\footnote{An
+        implementation of the \cpp{segmented} StackAllocator necessarily
+        interacts with the C++ runtime. For instance, with gcc, the
+        Boost.Context\cite{bcontext} library invokes
+        the \cpp{\_\_splitstack\_makecontext()}
         and \cpp{\_\_splitstack\_releasecontext()} intrinsic
         functions.\cite{splitalloc}\citecomma\cite{bctxseg}}
 \end{itemize}
