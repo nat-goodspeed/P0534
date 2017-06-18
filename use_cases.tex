@@ -295,7 +295,7 @@ Of course, that stack memory is not committed until actually used. Still, it
 does present a problem: in a 32-bit process, you quickly run out of address
 space. You are constrained to no more than\\
 
-$ \frac{2^{32} - (size\ of\ all\ code) - (size\ of\ all\ other\ data)}{stack\ size} $\\
+\begin{equation*} \cfrac{2^{32} - (\text{size of all code}) - (\text{size of all other data})}{(\text{stack size})} \end{equation*} \\
 
 stacks. Even if you set both \cpp{(size of all code)} and \cpp{(size of all other
 data)} to zero -- impossible, in practice -- you can allocate no more than 4096
