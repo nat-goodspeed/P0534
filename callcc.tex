@@ -23,19 +23,24 @@ move-constructible and move-assignable.
 
 The \cpp{std::callcc(foo)} call at (0) captures the \currcont, entering function
 \cpp{foo()} while passing the captured continuation as argument \cpp{caller}.\\
+
 As long as continuation \cpp{caller} is valid, \cpp{"foo"} is passed to standard
 output.\\
+
 The expression \cpp{caller.resume()} at (1) resumes the original
 continuation represented within \cpp{foo()} by \cpp{caller} and transfers back the
 control of execution to \cpp{main()}. On return from \cpp{std::callcc(foo)},
 the assignment at (2) sets \cpp{foo\_ct} to the \currcont as of (1).\\
+
 The call to \cpp{foo\_ct.resume()} at (3)
 resumes function \cpp{foo}, returning from the \resume call at (1) and executing
 the assignment at (4). Here we replace the \cont instance \cpp{caller}
 invalidated by the \resume call at (1) with the new instance returned by that
 same \resume call.\\
+
 Function \callcc captures the \currcont and enters the given function immediately,
 while \resume returns control back to the continuation saved in \cpp{*this}.\\
+
 The presented code prints out \cpp{"foo"} and \cpp{"bar"} in a endless loop.\\
 
 In order to transfer data, \callcc and \resume accept arguments. These are

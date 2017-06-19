@@ -1,10 +1,10 @@
 // launch this context early in the thread as a service used by deep_call()
 std::continuation deep_stack(std::continuation&& client) {
     for (;;) {
-        // In effect, this context is a little server, running resume_with()
-        // functions that need a deep stack and then context-switching back to
-        // whatever invoked them. Because of this infinite loop, it won't
-        // terminate voluntarily: we'll destroy it while it's suspended.
+        // In effect, this context is a little server, running a function that
+        // needs a deep stack and then context-switching back to whatever
+        // invoked it. Because of this infinite loop, it won't terminate
+        // voluntarily: we'll destroy it while it's suspended.
         client = client.resume();
         // if we were passed a std::function object
         if (client.data_available()) {

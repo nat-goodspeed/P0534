@@ -4,7 +4,7 @@
 \uabschnitt{stack represents the continuation}
 
 In contrast to \uc, \cc uses the stack as storage for the suspended
-execution context (the content of the registers, see P0534R0\cite{P0534R0}).
+execution context (the content of the registers).
 
 \begin{itemize}
     \item only the target has to be provided at resumption
@@ -15,7 +15,7 @@ execution context (the content of the registers, see P0534R0\cite{P0534R0}).
         to the resume operation
     \item no need for a global pointer that points to the current execution context
     \item data are transferred through a function call, no need for a global pointer
-    \item \main and each thread's \entryfn fit seamlessly into the concept of \cc
+    \item \main and each thread's \entryfn integrate seamlessly with \cc
         because the stack of \main, or the thread, already represents the continuation of
         that context
 \end{itemize}
