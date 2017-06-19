@@ -36,10 +36,10 @@ constructs new continuation\\
 \begin{description}
 \item Every valid \cont instance is synthesized by the underlying facility -- or
 move-constructed, or move-assigned, from another valid instance. There is
-no \cont constructor that directly constructs a valid \cont instance.
+no public \cont constructor that directly constructs a valid \cont instance.
 \item The entry-function \cpp{fn} passed to \callcc is passed a synthesized \cont
 instance representing the suspended caller of \callcc.
-\item The entry-function \cpp{fn} passed to \resumewith is passed a
+\item The function \cpp{fn} passed to \resumewith is passed a
 synthesized \cont instance representing the suspended caller of \resumewith.
 \item \callcc returns a synthesized \cont representing the previously-executing
 context, the context that suspended in order to resume the caller of \callcc. The
@@ -129,9 +129,9 @@ resumes a continuation\\
 
 \begin{description}
     \item[1)] suspends the active context, resumes continuation \cpp{*this}
-    \item[2)] suspends the active context, resumes continuation \cpp{*this} but
-              invokes \cpp{fn(args ...)} in the resumed context (on top of the
-              last stack frame)
+    \item[2)] suspends the active context, resumes continuation \cpp{*this}
+              but calls \cpp{fn()} in the resumed context (as if called by the
+              suspended function)
 \end{description}
 
 {\bfseries Parameters}
@@ -161,10 +161,10 @@ resumes a continuation\\
             \item the function \cpp{fn} passed to \resumewith --
               or some function called by \cpp{fn} -- throws an exception
         \end{itemize}
-    \item[3)] any exception thrown by the function \cpp{fn} passed
+    \item[3)] Any exception thrown by the function \cpp{fn} passed
               to \resumewith, or any function called by \cpp{fn}, is thrown in
               the context referenced by \cpp{*this} rather than in the context
-              of the caller of \resumewith
+              of the caller of \resumewith.
 \end{description}
 
 {\bfseries Preconditions}
@@ -238,9 +238,10 @@ transfer of data\\
 \end{tabular}
 
 \begin{description}
-    \item[1)] transfers single datum from continuation \cpp{c} into this context
-    \item[2)] transfers multiple data from continuation \cpp{c} into this
-              context
+    \item[1)] transfers single datum from continuation \cpp{*this} into
+              calling context
+    \item[2)] transfers multiple data from continuation \cpp{*this} into
+              calling context
 \end{description}
 
 {\bfseries Notes}
@@ -261,7 +262,7 @@ test whether suspended continuation may be resumed on a different thread\\
 \end{tabular}
 
 \begin{description}
-    \item[1)] returns \cpp{false} if \cpp{c} must be resumed on the same
+    \item[1)] returns \cpp{false} if \cpp{*this} must be resumed on the same
               thread on which it previously ran, \cpp{true} otherwise
 \end{description}
 
@@ -301,7 +302,7 @@ number of reasons.
     \item It might have been assigned to another instance, or passed into a
           function.\\
           \cont instances are move-only.
-    \item It might already have been resumed (\resume called) - calling \resume
+    \item It might already have been resumed -- calling \resume
           invalidates the instance.
     \item The \entryfn might have voluntarily terminated the
           context by returning.

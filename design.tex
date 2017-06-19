@@ -79,7 +79,7 @@ containing the values passed by the \callcc call at (0).
 
 \main as well as the \entryfn of a thread can be represented by a continuation.
 That \cont instance is synthesized when the running context suspends, and is
-passed into the newly-resumed context.
+passed into the newly-resumed context.\\
 
 Calling \anythread on a \cont instance representing \main, or
 the \entryfn of a thread, will return \cpp{false}: such a \cont
@@ -286,10 +286,10 @@ before \resumewith returns.
 \uabschnitt{\callcc immediately enters new context}
 
 \callcc creates a new context and immediately calls its passed \entryfn on
-that new context.
+that new context.\\
 
 This is intentional for consistency with the \cc facility in other
-languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
+languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}\\
 
 Moreover, this behavior prevents a problematic usage. Suppose we had
 a \cpp{callcc\_deferred()} which would create a new context but immediately
@@ -298,21 +298,21 @@ calling \resume on the returned \cont instance.
 \cppf{good_resume}
 But now consider this scenario:
 \cppf{bad_resume_with}
-What should happen here?
+What should happen here?\\
 
 \resumewith is supposed to call \cpp{injected\_function()} as if it had been
 directly called by \cpp{entry\_function()} -- rather, by the context-switch
 operation most recently executed by \cpp{entry\_function()}. But
 since \cpp{entry\_function()} has never yet been entered, it hasn't executed
-any context-switch operation. Indeed, it does not yet have a stack frame.
+any context-switch operation. Indeed, it does not yet have a stack frame.\\
 
 Should \cpp{injected\_function()} \emph{become} the \entryfn
-for \cpp{newcontext}, displacing \cpp{entry\_function()} entirely?
+for \cpp{newcontext}, displacing \cpp{entry\_function()} entirely?\\
 
 That would encounter signature problems. The \entryfn invoked
 by \callcc \emph{must} return a \cont. Yet the \cpp{fn} passed to \resumewith
 returns -- not a \cont -- but arbitrary data to be retrieved by the suspended
-context!
+context!\\
 
 To quickly resume the caller's context rather than prioritizing the new
 context, the \entryfn passed to \callcc can immediately context-switch back

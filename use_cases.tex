@@ -11,7 +11,7 @@ suspending it once it has consumed that time slice.\\
 
 In contrast, a userland thread does not create additional work for the kernel
 scheduler. As far as the kernel is concerned, that userland thread is simply
-the work the kernel thread is choosing to do at this moment. When context
+the work the kernel thread chooses to do at this moment. When context
 switches from one userland thread to another, the kernel is not engaged.\\
 
 For present purposes, we will use the term \bfs{fiber} to mean ``userland
@@ -117,7 +117,7 @@ excellent idea. A memory pool for activation frames is called a ``stack.''\\
   \cpp{callcc()}.
 \item Fiber objects are known to a central fiber manager object.
 \item The fiber manager keeps fiber objects in separate containers: those
-  still waiting for something else versus those that are ready
+  still waiting for something versus those that are ready
   to resume.
 \item Instead of directly resuming a specific other fiber, the
   running fiber suspends by calling a scheduler to pick one of the ready
@@ -242,7 +242,7 @@ A few examples of such cases:\\
 \item[Connecting output iterator to input iterator] In February 2017, a
   question was asked on the Boost developers' mailing list:\cite{lazyspirit}
   Can a Boost.Spirit\cite{bspirit} Karma\cite{bspiritkarma} generator, which
-  takes an output iterator, be engaged lazily? Can consuming code request
+  takes an output iterator, be engaged lazily? Can consumer code request
   one item at a time?\\
 
   The answer is straightforward: run the Karma generator in a
