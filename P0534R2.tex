@@ -41,11 +41,11 @@
 \begin{document}
 \small
 \begin{tabbing}
-    Document number: \= P0534R1\\
-    Date:            \> 2017-06-18\\
+    Document number: \= P0534R2\\
+    Date:            \> 2017-07-29\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
     Authors:         \> Oliver Kowalke (oliver.kowalke@gmail.com), Nat Goodspeed (nat@lindenlab.com)\\
-    Audience:        \> SG1/LEWG\\
+    Audience:        \> LEWG\\
 \end{tabbing}
 
 \section*{call/cc (call-with-current-continuation): A low-level API for stackful context switching}
@@ -139,24 +139,16 @@ well:
 \end{itemize}
 
 \abschnitt{Revision History}
-This document supersedes P0534R0.\cite{P0534R0}\\
+This document supersedes P0534R1.\cite{P0534R1}\\
 \newline
-Changes since P0534R0:
+Changes since P0534R1:
 
 \begin{itemize}
     \item API modified
     \begin{itemize}
-        \item \cpp{operator()} renamed to \resume
-        \item \cpp{operator(invoke\_ontop\_arg\_t)} renamed to \resumewith
-        \item \dataavail, \getdata and \anythread are now member functions
-          instead of free functions
-        \item stack unwinding now explicitly requires specific \cpp{unwind\_exception} 
-              exception
+        \item \cpp{any\_thread()} removed
     \end{itemize}
-    \item added example use cases
-    \item \cc compared with \uc and \lj
-    \item why \cc is a low-level implementation
-    \item details of stack destruction
+    \item \cont may only resumed on the same thread as it was created
 \end{itemize}
 
 \input{continuations}

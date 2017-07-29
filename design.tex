@@ -81,10 +81,6 @@ containing the values passed by the \callcc call at (0).
 That \cont instance is synthesized when the running context suspends, and is
 passed into the newly-resumed context.\\
 
-Calling \anythread on a \cont instance representing \main, or
-the \entryfn of a thread, will return \cpp{false}: such a \cont
-must \emph{only} be resumed on its original thread.
-
 \cppf{simple}
 The \cpp{callcc()} call at (0) enters the lambda. The \cont\ \cpp{caller} at (1)
 represents the execution context of \main. Returning \cpp{caller} at (2) resumes the
@@ -94,11 +90,7 @@ original context, switching back to \main.
 \uabschnitt{\cc and std::thread}
 Any context represented by a valid \cont instance is necessarily suspended.\\
 
-It is valid to resume a \cont instance on any thread -- \emph{except} that
-since the operating system is responsible for the stack allocated for \main,
-as well as each \cpp{std::thread}, you must not attempt to resume a \cont
-instance representing any such context on any thread other
-than its own. \anythread tests for this.\\
+It is only valid to resume a \cont instance on the same thread as it was created.\\
 
 If, for \cont\ \cpp{c}, \cpp{c.any\_thread()} returns \cpp{false}, it is
 only valid to resume \cpp{c} on the thread on which it was initially
@@ -345,8 +337,7 @@ invoked \dtor.\\
 
 The stack on which \cpp{main()} is executed, as well as the stack implicitly
 created by \cpp{std::thread}'s constructor, is allocated by the operating
-system. Such stacks are recognized by \cont (\anythread
-returns \cpp{false}), and are not deallocated by its destructor.
+system. Such stacks are recognized and are not deallocated by its destructor.
 
 
 \uabschnitt{Stack allocators}\label{subsec:stackalloc}
