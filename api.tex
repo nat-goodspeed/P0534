@@ -171,6 +171,8 @@ resumes a continuation\\
 \begin{description}
     \item[1)] \cpp{*this} represents a context of execution (\opbool returns
                \cpp{true})
+    \item[2)] the current \cpp{std::thread} is the same as the thread on
+               which \cpp{*this} was originally launched
 \end{description}
 
 {\bfseries Postcondition}
@@ -199,6 +201,40 @@ When calling \resume, it is conventional to replace the newly-invalidated
 instance -- the instance on which \resume was called -- with the new instance
 returned by that \resume call. This helps to avoid inadvertent calls to \resume
 on the old, invalidated instance.
+\newline
+An injected function \cpp{fn()} must accept \cpp{std::continuation&&}.
+However, instead of returning \cont, \cpp{fn()} must return a type
+corresponding to the \cpp{args} passed to the \resumewith call.
+
+\begin{itemize}
+  \item If you call \cpp{ctx.resume\_with(fn)} with no additional \cpp{args},
+  the return type of \cpp{fn()} is irrelevant: its return value is discarded.
+  \item If you call \cpp{ctx.resume\_with(fn, single\_arg)}, then \cpp{fn()}
+  must return \cpp{decltype(single\_arg)}.
+  \item If you call \cpp{ctx.resume\_with(fn, multiple\_args...)},
+  then \cpp{fn()} must return a \cpp{std::tuple} with corresponding types:
+  specifically, \cpp{decltype(std::make\_tuple(multiple\_args...))}.
+\end{itemize}
+
+The value returned by an injected function \cpp{fn()} becomes available to the
+suspended function on the context represented by \cpp{*this}. It is up
+to \cpp{fn()} whether to return the same value(s) it retrieved from
+the \resumewith call.
+
+\begin{itemize}
+  \item If you call \cpp{resume\_with(fn)} with no additional \cpp{args},
+  then \dataavail will return \cpp{false} even within the suspended function,
+  which may not call \getdata at all.
+  \item If you call \cpp{resume\_with(fn, args...)} -- with one or
+  more \cpp{args} -- then \dataavail will return \cpp{true} within the
+  suspended function. \getdata within the suspended function will retrieve the
+  value returned by \cpp{fn()}.
+\end{itemize}
+
+Neither an injected function \cpp{fn()}, nor any function it calls, may
+perform a context switch back to the context that called \resumewith --
+whether directly, or indirectly via other contexts. \cpp{fn()} \emph{must}
+return (or throw an exception) before \resumewith returns.
 
 
 \subparagraph{data\_available()}
@@ -245,7 +281,26 @@ transfer of data\\
 {\bfseries Notes}
 \newline
 The template argument(s) passed to \cpp{get\_data()} must match in number and
-type the actual argument types passed to \callcc or \resume.
+type the actual argument types passed to \callcc, \resume or \resumewith.
+
+\begin{itemize}
+  \item If you call \cpp{std::callcc(fn)}, \resume or \cpp{resume\_with(fn)}
+  with no additional arguments, then \dataavail will
+  return \cpp{false}: \cpp{fn()} may not call \getdata at all.
+  \item If you call \cpp{std::callcc(fn,
+  single\_arg)}, \cpp{resume(single\_arg)} or \cpp{resume\_with(fn,
+  single\_arg)}, then \dataavail will return \cpp{true}, and if \cpp{fn()}
+  calls \getdata, its template argument must
+  match \cpp{get\_data<decltype(single\_arg)>()}.
+  \item If you call \cpp{std::callcc(fn,
+  multiple\_args...)}, \cpp{resume(multiple\_args...)}
+  or \cpp{resume\_with(fn, multiple\_args...)}, then \dataavail will
+  return \cpp{true}, and if \cpp{fn()} calls \getdata, its template arguments
+  must match the types of \cpp{multiple\_args}.
+  Specifically, \cpp{get\_data<Args...>()} returns \cpp{std::tuple<Args...>};
+  that \cpp{std::tuple} must be compatible
+  with \cpp{std::make\_tuple(multiple\_args...)}.
+\end{itemize}
 
 
 \subparagraph*{operator bool}
@@ -370,6 +425,11 @@ swaps two \cont instances\\
 
 \uabschnitt{std::callcc()}
 
+\bfs{[LEWG: Some members of SG1 are not happy with the name \cpp{callcc}. While
+it does resemble facilities in other languages, they feel the proposed facility is
+not a close enough parallel and that the name might be misleading. Alternative
+names are invited.]}
+
 create and enter a new context, capturing the current execution context (the
 {\bfseries current continuation}) in a \cont and passing it to the
 specified \entryfn.\\
@@ -418,6 +478,12 @@ context and the switch to the other execution path.\\
                         resume the current context
 \end{description}
 
+{\bfseries Preconditions}
+\begin{description}
+    \item \callcc may only be called by code running on a \cpp{std::thread},
+    or on an execution agent created by a previous \callcc call.
+\end{description}
+
 {\bfseries Exceptions}
 \begin{description}
     \item[1)] calls \cpp{std::terminate} if an exception other
@@ -432,6 +498,8 @@ context and the switch to the other execution path.\\
             \item the function \cpp{fn} passed to \resumewith --
               or some function called by \cpp{fn} -- throws an exception
         \end{itemize}
+    \item[4)] if \entryfn\ \cpp{fn} contains a \cpp{catch(...)} clause, it
+              should also catch and rethrow \unwindex
 \end{description}
 
 {\bfseries Notes}
@@ -442,9 +510,30 @@ only by some x86 ABIs} Those data are restored if the calling context is resumed
 \item A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.
 \item On return \cpp{fn} must specify a \cont to which execution control is
-transferred.
+transferred. Returning an invalid \cont instance (\opbool returns \cpp{false})
+invokes undefined behavior.
 \item If an instance with valid state goes out of scope and its \cpp{fn} has not yet
 returned, the stack is unwound and deallocated.
+\item There are a few different ways to terminate a given context without
+terminating the whole process, or engaging undefined behavior.
+
+\begin{itemize}
+\item Return a valid continuation from the \entryfn \cpp{fn}.
+\item Call \unwindcont with a valid continuation. This throws a \unwindex
+instance that binds that continuation.
+\item \bfs{[LEWG: Should we publish the \unwindex constructor that
+accepts \cont? Then another supported way would be to construct and
+throw \unwindex ``by hand,'' which is what \unwindcont does internally.]}
+\item
+Call \cpp{std::continuation::resume\_with(std::unwind\_context)}.
+This is what \dtor does. Since \unwindcont accepts a \cont, and
+since \resumewith synthesizes a \cont and passes it to the subject function,
+this terminates the context referenced by the original \cont instance and
+switches back to the caller.
+\item Engage \dtor: switch to some other context, which will
+receive a \cont instance representing the current context. Make that other
+context destroy the received \cont instance.
+\end{itemize}
 \end{description}
 
 \uabschnitt{std::unwind\_context()}
@@ -486,4 +575,38 @@ be called from any function on that context.
 \bfs{Exceptions}
 \begin{description}
     \item[1)] throws \unwindex
+\end{description}
+
+\uabschnitt{std::unwind\_exception}
+
+is the exception used to unwind the stack referenced by a \cont being
+destroyed. It is thrown by \unwindcont. \unwindex binds a \cont referencing the
+context to which control should be passed once the current context is unwound
+and destroyed.
+
+\uabschnitt{Stack allocators}
+
+are the means by which stacks with non-default properties may be requested by
+the caller of \callcc. The stack allocator concept is
+implementation-dependent; the means by which an implementation's stack
+allocators communicate with \callcc is unspecified.\\
+
+An implementation may provide zero or more stack allocators. However, a stack
+allocator with semantics matching any of the following must use the
+corresponding name.
+\begin{description}
+  \item[protected\_fixedsize] The constructor accepts a \cpp{size\_t}
+        parameter. This stack allocator constructs a contiguous stack of
+        specified size, appending a guard page at the end to protect against
+        overflow. If the guard page is accessed (read or write operation), a
+        segmentation fault/access violation is generated by the operating
+        system.
+  \item[fixedsize] The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator constructs a contiguous stack of specified size.
+        In contrast to \cpp{protected\_fixedsize}, it does not append a guard
+        page. The memory is simply managed by \cpp{std::malloc()}
+        and \cpp{std::free()}, avoiding kernel involvement.
+  \item[segmented] The constructor accepts a \cpp{size\_t} parameter.
+        This stack allocator creates a segmented stack\cite{gccsplit} with the
+        specified initial size, which grows on demand.
 \end{description}
