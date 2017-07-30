@@ -148,16 +148,18 @@ Changes since P0534R1:
     \begin{itemize}
         \item \cpp{any\_thread()} removed
     \end{itemize}
-    \item \cont may only resumed on the same thread as it was created
+    \item \cont may only be resumed on the same \cpp{std::thread} on which it
+      was created
+    \item only code running on a \cpp{std::thread} (e.g. the thread implicitly
+      created for \cpp{main()}) or an execution agent created by \callcc may call
+      \callcc
+    \item illustrative use cases removed
 \end{itemize}
 
 \input{continuations}
 \input{callcc}
 \input{design}
 \input{performance}
-\input{use_cases}
-\input{cc_vs_uc}
-\input{implementation}
 \input{api}
 \input{notes}
 

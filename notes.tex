@@ -3,9 +3,9 @@
 
 \uabschnitt{GPU}
 
-\cc as proposed in this paper does not take GPUs into account. Later revisions
-will address this issue, once we have an overarching concept of how the various
-kinds of ``lightweight execution agents'' should interact.
+\cc as proposed in this paper is solely a CPU operation. It cannot be used to
+create a GPU execution agent, or to create or resume a CPU context from code
+running on a GPU.
 
 
 \uabschnitt{SIMD}
@@ -26,5 +26,5 @@ dedicated to SIMD might be preserved and restored too
 
 \uabschnitt{Migration between threads}
 
-\cont can be migrated between threads, except for instances of
-\cont representing \main or \entryfn of a thread (see \nameref{subsec:main}).
+is forbidden. A \cont may only be resumed on the \cpp{std::thread} on which it
+was launched.

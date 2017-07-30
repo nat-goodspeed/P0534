@@ -14,8 +14,8 @@ languages.\cite{schemecallcc}\citecomma\cite{rubycallcc}
 
 \uabschnitt{Footprint}
 
-\cont contains only its \bfs{stack pointer} as a member variable. It should
-typically be no larger than a pointer.
+\cont contains only its \bfs{stack pointer} and a data pointer as member variables. It should
+typically be no larger than two pointers.
 
 \uabschnitt{Passing data}\label{subsec:data}
 
@@ -90,10 +90,7 @@ original context, switching back to \main.
 \uabschnitt{\cc and std::thread}
 Any context represented by a valid \cont instance is necessarily suspended.\\
 
-It is only valid to resume a \cont instance on the same thread as it was created.\\
-
-If, for \cont\ \cpp{c}, \cpp{c.any\_thread()} returns \cpp{false}, it is
-only valid to resume \cpp{c} on the thread on which it was initially
+It is only valid to resume a \cont instance on the thread on which it was initially
 launched.
 
 
@@ -306,9 +303,9 @@ by \callcc \emph{must} return a \cont. Yet the \cpp{fn} passed to \resumewith
 returns -- not a \cont -- but arbitrary data to be retrieved by the suspended
 context!\\
 
-To quickly resume the caller's context rather than prioritizing the new
-context, the \entryfn passed to \callcc can immediately context-switch back
-to its caller by calling \resume on its passed-in \cont:
+With the present API, to quickly resume the caller's context rather than
+prioritizing the new context, the \entryfn passed to \callcc can immediately
+context-switch back to its caller by calling \resume on its passed-in \cont:
 \cppf{quickly_resume}
 
 A more generic wrapper for that behavior could look something like this:
@@ -337,7 +334,8 @@ invoked \dtor.\\
 
 The stack on which \cpp{main()} is executed, as well as the stack implicitly
 created by \cpp{std::thread}'s constructor, is allocated by the operating
-system. Such stacks are recognized and are not deallocated by its destructor.
+system. Such stacks are recognized by \cont, and are not deallocated by its
+destructor.
 
 
 \uabschnitt{Stack allocators}\label{subsec:stackalloc}
