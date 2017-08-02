@@ -43,16 +43,16 @@ while \resume returns control back to the continuation saved in \cpp{*this}.\\
 
 The presented code prints out \cpp{"foo"} and \cpp{"bar"} in a endless loop.\\
 
-In order to transfer data, \callcc and \resume accept arguments. These are
-stored on the stack of the captured \currcont. Function \dataavail tests whether data
-have been passed, and with \getdata the data can be retrieved.
+Data can be transfered between two continuations via global pointer, calling
+wrappers (like \cpp{std::bind}) or lambda captures.
 \cppf{fibonacci}
 
-The invocation of \callcc at (0) immediately enters the lambda, passing no data
-but the \currcont. The lambda calculates the fibonacci number using local
-variables \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is
-transferred via \resume at (1). The execution control returns; \cpp{lambda} now
-represents the continuation of the lambda. With \getdata at (2) the fibonacci
-number is transferred to the current context while at (3) the lambda is entered
-again in order to compute the next fibonacci number -- without passing any
-parameter to the lambda.
+Variable \cpp{a} is used to transfer the computed fibonnaci number and captured
+as reference by the lmbda.\\
+The invocation of \callcc at (0) immediately enters the lambda, passing the
+\currcont. The lambda calculates the fibonacci number using local variables
+\cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is stored in
+\cpp{a} and the execution control returns via \resume at (1).
+\cpp{lambda} now represents the continuation of the lambda. The computed fibonacci
+number is printed at (2). At (3) the lambda is entered again in order to compute
+the next fibonacci number.

@@ -7,16 +7,9 @@ public:
     continuation( continuation const& other) noexcept = delete;
     continuation & operator=( continuation const& other) noexcept = delete;
 
-    template< typename ... Arg >
-    continuation resume( Arg ... arg);
-    template< typename Fn, typename ... Arg >
-    continuation resume_with( Fn && fn, Arg ... arg);
-
-    bool data_available() const noexcept;
-    template< typename ... Arg >
-    <unspecified> get_data();
-
-    bool any_thread() const noexcept;
+    continuation resume();
+    template< typename Fn >
+    continuation resume_with( Fn && fn);
 
     explicit operator bool() const noexcept;
     bool operator!() const noexcept;
@@ -29,11 +22,11 @@ public:
     void swap( continuation & other) noexcept;
 };
 
-template< typename Fn, typename ...Arg >
-continuation callcc( Fn &&, Arg ...);
+template< typename Fn >
+continuation callcc( Fn &&);
 
-template< typename StackAlloc, typename Fn, typename ...Arg >
-continuation callcc( std::allocator_arg_t, StackAlloc, Fn &&, Arg ...);
+template< typename StackAlloc, typename Fn >
+continuation callcc( std::allocator_arg_t, StackAlloc, Fn &&);
 
 void unwind_context( continuation && cont);
 

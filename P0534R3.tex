@@ -41,8 +41,8 @@
 \begin{document}
 \small
 \begin{tabbing}
-    Document number: \= P0534R2\\
-    Date:            \> 2017-07-29\\
+    Document number: \= P0534R3\\
+    Date:            \> 2017-08-01\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
     Authors:         \> Oliver Kowalke (oliver.kowalke@gmail.com), Nat Goodspeed (nat@lindenlab.com)\\
     Audience:        \> LEWG\\
@@ -139,21 +139,12 @@ well:
 \end{itemize}
 
 \abschnitt{Revision History}
-This document supersedes P0534R1.\cite{P0534R1}\\
+This document supersedes P0534R2.\cite{P0534R2}\\
 \newline
-Changes since P0534R1:
+Changes since P0534R2:
 
 \begin{itemize}
-    \item API modified
-    \begin{itemize}
-        \item \cpp{any\_thread()} removed
-    \end{itemize}
-    \item \cont may only be resumed on the same \cpp{std::thread} on which it
-      was created
-    \item only code running on a \cpp{std::thread} (e.g. the thread implicitly
-      created for \cpp{main()}) or an execution agent created by \callcc may call
-      \callcc
-    \item illustrative use cases removed
+    \item simplier API (transfer of data discarded)
 \end{itemize}
 
 \input{continuations}

@@ -1,2 +1,2 @@
-    std::continuation newcontext = std::callcc_deferred(entry_function);
-    newcontext = newcontext.resume_with(injected_function);
+std::continuation newcontext = std::callcc_deferred(entry_function);
+newcontext = newcontext.resume_with(injected_function);
