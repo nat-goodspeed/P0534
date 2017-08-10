@@ -22,6 +22,7 @@ f_ct=  // (13)
     f_ct.resume_with([&data](std::continuation && mc){  // (8)
                         std::cout << "f2: entered: " << data << std::endl;
                         data=-1;  // (9)
+                        return std::move( c);
                 });
 std::cout << "f1: returned third time" << std::endl;
 
