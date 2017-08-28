@@ -109,10 +109,7 @@ Consider the following bullets from P0559R0:\cite{P0559R0}
 
 The proposed \cc facility is intended to be foundational. While of course
 application coders are free to use the \cc API, its real promise is in
-supporting higher-level abstractions.\\
-
-This proposal describes the basic \cc facility, presents some illustrative use
-cases and explains why the API is set at its present level.
+supporting higher-level abstractions.
 
 \abschnitt{Why should \cc be standardized?}
 
@@ -132,7 +129,7 @@ well:
   \item The compiler might be able to analyze the code to be launched on a new
     \cc context and determine an optimal stack size for that context.
   \item The compiler might be able to determine that not all registers need be
-    preserved across a context switch.
+    preserved across a particular context switch.
   \item For certain use cases, the compiler might be able to optimize away
     context-switching altogether. Promising work has been done in this area
     for the \coawait facility.\cite{N4649}

@@ -47,8 +47,8 @@ Data can be transfered between two continuations via global pointer, calling
 wrappers (like \cpp{std::bind}) or lambda captures.
 \cppf{fibonacci}
 
-Variable \cpp{a} is used to transfer the computed fibonnaci number and captured
-as reference by the lmbda.\\
+Variable \cpp{a} is captured by reference by the lambda and used to transfer
+the computed fibonnaci number.\\
 The invocation of \callcc at (0) immediately enters the lambda, passing the
 \currcont. The lambda calculates the fibonacci number using local variables
 \cpp{a}, \cpp{b} and \cpp{next}. The calculated fibonacci number is stored in

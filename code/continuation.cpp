@@ -21,13 +21,3 @@ public:
     bool operator>=( continuation const& other) const noexcept;
     void swap( continuation & other) noexcept;
 };
-
-template< typename Fn >
-continuation callcc( Fn &&);
-
-template< typename StackAlloc, typename Fn >
-continuation callcc( std::allocator_arg_t, StackAlloc, Fn &&);
-
-void unwind_context( continuation && cont);
-
-struct unwind_exception{};
