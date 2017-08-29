@@ -17,7 +17,7 @@ constructs new execution context\\
 
     \midrule
 
-    \cpp{continuation(continuation&& other)} & (2)\\
+    \cpp{continuation(continuation&& other) noexcept} & (2)\\
 
     \midrule
 
@@ -86,7 +86,7 @@ moves the continuation object\\
 \begin{tabular}{ l l }
     \midrule
 
-    \cpp{continuation& operator=(continuation&& other)} & (1)\\
+    \cpp{continuation& operator=(continuation&& other) noexcept} & (1)\\
 
     \midrule
 
@@ -136,7 +136,7 @@ resumes a continuation\\
 
 {\bfseries Parameters}
 \begin{description}
-    \item[fn] function invoked ontop of resumed continuation\\
+    \item[fn] function injected into resumed continuation\\
 \end{description}
 
 {\bfseries Return value}
@@ -188,8 +188,7 @@ A suspended \cpp{continuation} can be destroyed. Its resources will be cleaned
 up at that time.
 \newline
 The returned \cpp{continuation} indicates whether the suspended context has
-terminated (returned from \entryfn) via \opbool. If the returned
-\cpp{continuation} has terminated, no data may be retrieved.
+terminated (returned from \entryfn) via \opbool.
 \newline
 Because \resume invalidates the instance on which it is called, \emph{no valid
 \cont instance ever represents the currently-running context.}
@@ -200,12 +199,8 @@ returned by that \resume call. This helps to avoid inadvertent calls to \resume
 on the old, invalidated instance.
 \newline
 An injected function \cpp{fn()} must accept \cpp{std::continuation&&} and
-return void (return value is discarded).
-
-Neither an injected function \cpp{fn()}, nor any function it calls, may
-perform a context switch back to the context that called \resumewith --
-whether directly, or indirectly via other contexts. \cpp{fn()} \emph{must}
-return (or throw an exception) before \resumewith returns.
+return \cont. The returned \cont instance is, in turn, used as the return
+value for the suspended function: \callcc, \resume or \resumewith.
 
 
 \subparagraph*{operator bool}

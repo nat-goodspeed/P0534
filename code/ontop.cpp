@@ -21,15 +21,16 @@ data+=1;
 f_ct=  // (13)
     f_ct.resume_with([&data](std::continuation && mc){  // (8)
                         std::cout << "f2: entered: " << data << std::endl;
-                        data=-1;  // (9)
-                        return std::move( c);
+                        data=-1;
+                        return std::move( mc);  // (9)
                 });
 std::cout << "f1: returned third time" << std::endl;
 
 output:
-    f: entered first time: 1
-    f: returned first time: 2
-    f: entered second time: 3
-    f: returned second time: 4
-    g: entered: 5
-    f: entered third time: -1
+    f1: entered first time: 0
+    f1: returned first time: 1
+    f1: entered second time: 2
+    f1: returned second time: 3
+    f2: entered: 4
+    f1: entered third time: -1
+    f1: returned third time
