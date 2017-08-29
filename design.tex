@@ -133,12 +133,11 @@ exception) into a suspended context. For this purpose you may call
 Let's say that the context represented by the \cont instance \cpp{ctx} has
 called a function \cpp{suspender()}, which has called \contresume and is now
 suspended. You intend to inject function \cpp{fn()} into context \cpp{ctx} as
-if \cpp{suspender()}'s \suspend call had directly called \cpp{fn()}.\\
+if \cpp{suspender()}'s \resume call had directly called \cpp{fn()}.\\
 
 Like an \entryfn passed to \callcc, \cpp{fn()} must accept
 \cpp{std::continuation&&} and return \cont. The \cont instance returned
-by \cpp{fn()} will, in turn, be returned to \cpp{suspender()} by its \suspend
-call.
+by \cpp{fn()} will, in turn, be returned to \cpp{suspender()} by \resume.
 
 Suppose that code running on the program's main context
 calls \cpp{std::callcc()}, thereby entering the first lambda shown below. This
