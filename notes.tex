@@ -19,7 +19,8 @@ dedicated to SIMD might be preserved and restored too
 
 \uabschnitt{TLS}
 
-\cc is TLS-agnostic - best practice related to TLS applies to \cc too.\\
+\cc is TLS-agnostic - best practice related to TLS applies to \cc too. (But
+see P0772R0.)\\
 
 \cc only preserves and restores micro-processor registers at its invocation.
 
@@ -28,3 +29,9 @@ dedicated to SIMD might be preserved and restored too
 
 is forbidden. A \cont may only be resumed on the \cpp{std::thread} on which it
 was launched.
+
+\uabschnitt{Relationship to executors}
+
+The \cc facility is intended to compose with executors. The authors envision
+an executor implementation that runs each passed work item on a \cc context.
+But neither \cc nor the executors proposal \emph{depend} on each other.

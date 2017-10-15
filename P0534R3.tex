@@ -42,7 +42,7 @@
 \small
 \begin{tabbing}
     Document number: \= P0534R3\\
-    Date:            \> 2017-08-29\\
+    Date:            \> 2017-10-15\\
     Reply-to:        \> Oliver Kowalke (oliver.kowalke@gmail.com)\\
     Authors:         \> Oliver Kowalke (oliver.kowalke@gmail.com), Nat Goodspeed (nat@lindenlab.com)\\
     Audience:        \> LEWG\\
@@ -59,8 +59,10 @@
 \abschnitt{Abstract}
 This document proposes a C++ equivalent to the well-known concept
 \bfs{call-with-current-continuation} (abbreviated \bfs{call/cc}). This
-facility permits a program written in portable C++ to subdivide processing into
-distinct \bfs{contexts:} units smaller than a thread.\\
+facility permits a program written in portable C++ to delegate processing to
+distinct lightweight execution agents nested within a thread. Within this
+proposal, the terms \bfs{context}, \bfs{execution context} and \bfs{context of
+execution} all refer interchangeably to an execution agent of this form.\\
 
 Within this proposal, the unadorned term ``thread'' means a \cpp{std::thread}
 (or \bfs{kernel thread}).
@@ -83,6 +85,11 @@ This has a couple of important implications:
   one context suspends and another resumes, is \bfs{context-switching.}
 \item There are no data races between contexts running on the same thread.
 \end{itemize}
+
+It may be desirable to invent a less overloaded term for lightweight stackful
+mutually-exclusive execution agents nested within a thread. The term
+``context'' is used for now because ``context-switching'' is a well-established
+term of art.\\
 
 The kind of context-switching presented in this proposal is called
 \bfs{stackful} because each context requires some implementation of the C++
@@ -141,7 +148,7 @@ This document supersedes P0534R2.\cite{P0534R2}\\
 Changes since P0534R2:
 
 \begin{itemize}
-    \item simplier API (transfer of data discarded)
+    \item simpler API (transfer of data discarded)
 \end{itemize}
 
 \input{continuations}

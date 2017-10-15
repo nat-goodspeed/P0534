@@ -1,3 +1,4 @@
+\newpage
 \abschnitt{Design}\label{design}
 
 \uabschnitt{\callcc as a factory function}
@@ -20,7 +21,7 @@ typically be no larger than one pointer.
 
 \uabschnitt{Passing data}\label{subsec:data}
 
-Data can be transfered between two continuations via global pointer, calling
+Data can be transferred between two continuations via global pointer, calling
 wrappers (like \cpp{std::bind}) or lambda captures.
 \cppf{passing_lambda}
 
@@ -218,6 +219,27 @@ A more generic wrapper for that behavior could look something like this:
 Note that since \cpp{suspend\_immediately()} \emph{has} been entered, it
 is perfectly valid for the caller of \cpp{callcc\_deferred()} to
 call \resumewith on the returned \cont.
+
+
+\uabschnitt{\resume invalidates \cont}
+
+The academic literature distinguishes \emph{full continuations}
+from \emph{one-shot continuations.} A full continuation can be resumed
+multiple times, which would be not merely difficult to implement but
+semantically problematic in C++. The \cont proposed in this paper is a
+one-shot continuation. Its \resume method immediately invalidates the
+instance; that instance may no longer be resumed.\\
+
+Consider an implementation in which \cont stores a pointer into the
+processor's stack area. Once that \cont is resumed, the formerly-suspended
+function will eventually return, destroying its stack frame. Some other
+function will reuse the space in some completely different way. Or perhaps
+not; that location in the reserved stack area may remain uninitialized memory.\\
+
+It would be dramatically bad if that \cont instance retained the old pointer
+into the stack area, and consuming code mistakenly attempted to resume that
+same \cont again. Invalidating the \cont allows consuming code to detect the
+difference between a \cont that has not yet been resumed and one that has.
 
 
 \uabschnitt{Stack destruction}\label{subsec:destruction}
